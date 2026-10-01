@@ -1,0 +1,1111 @@
+{
+  "info": {
+    "name": "Workspace Scheduler API",
+    "description": "Run Auth > Demo login first. Then run the whole collection in order (Collection Runner or Newman). Admin requests need ENABLE_DEMO_ADMIN=true (local/CI); they are skipped/403 in production by design.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('status ok', () => pm.expect(pm.response.json().data.status).to.eql('ok'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Demo login (user)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/demo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "demo"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"user\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('returns token + user', () => { pm.expect(j.data.token).to.be.a('string'); pm.expect(j.data.user.role).to.eql('user'); });",
+                  "pm.collectionVariables.set('token', j.data.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Demo login (admin) - local/CI only",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/demo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "demo"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"admin\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Expected: 200 locally (ENABLE_DEMO_ADMIN=true), 403 in production.",
+                  "pm.test('200 or 403', () => pm.expect([200,403]).to.include(pm.response.code));",
+                  "if (pm.response.code === 200) { pm.collectionVariables.set('adminToken', pm.response.json().data.token); pm.collectionVariables.set('adminAvailable', 'true'); } else { pm.collectionVariables.set('adminAvailable', 'false'); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('has email', () => pm.expect(pm.response.json().data.email).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me without token -> 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 401', () => pm.response.to.have.status(401));",
+                  "pm.test('error code UNAUTHENTICATED', () => pm.expect(pm.response.json().error.code).to.eql('UNAUTHENTICATED'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Resources",
+      "item": [
+        {
+          "name": "List resources",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/resources?limit=12",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resources"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "12"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "const j = pm.response.json();",
+                  "pm.test('array + meta', () => { pm.expect(j.data).to.be.an('array'); pm.expect(j.meta).to.have.property('total'); });",
+                  "if (j.data.length) { pm.collectionVariables.set('resourceId', j.data[0]._id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List rooms with WiFi, capacity >= 4",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/resources?type=room&amenity=WiFi&minCapacity=4",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resources"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "room"
+                },
+                {
+                  "key": "amenity",
+                  "value": "WiFi"
+                },
+                {
+                  "key": "minCapacity",
+                  "value": "4"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('all rooms, capacity >= 4', () => pm.response.json().data.forEach(r => { pm.expect(r.type).to.eql('room'); pm.expect(r.capacity).to.be.at.least(4); }));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get resource",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/resources/{{resourceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resources",
+                "{{resourceId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get unknown resource -> 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/resources/000000000000000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resources",
+                "000000000000000000000000"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('error code NOT_FOUND', () => pm.expect(pm.response.json().error.code).to.eql('NOT_FOUND'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Availability (next 24h)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/resources/{{resourceId}}/availability?from={{availFrom}}&to={{availTo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resources",
+                "{{resourceId}}",
+                "availability"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "{{availFrom}}"
+                },
+                {
+                  "key": "to",
+                  "value": "{{availTo}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const f = new Date(); const t = new Date(f.getTime()+24*3600*1000);",
+                  "pm.collectionVariables.set('availFrom', f.toISOString());",
+                  "pm.collectionVariables.set('availTo', t.toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('booked is array', () => pm.expect(pm.response.json().data.booked).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create resource as user -> 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/resources",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resources"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nope\",\n  \"type\": \"room\",\n  \"capacity\": 4,\n  \"location\": \"X\",\n  \"amenities\": []\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403', () => pm.response.to.have.status(403));",
+                  "pm.test('error code FORBIDDEN', () => pm.expect(pm.response.json().error.code).to.eql('FORBIDDEN'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create resource (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/resources",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resources"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Test Room\",\n  \"type\": \"room\",\n  \"capacity\": 6,\n  \"location\": \"Floor 9\",\n  \"amenities\": [\n    \"WiFi\",\n    \"Whiteboard\"\n  ]\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.collectionVariables.get('adminAvailable') !== 'true') { pm.test('skipped: admin unavailable', () => pm.expect(pm.response.code).to.eql(401)); return; }",
+                  "pm.test('201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('newResourceId', pm.response.json().data._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update resource (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/resources/{{newResourceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resources",
+                "{{newResourceId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"capacity\": 8\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.collectionVariables.get('adminAvailable') !== 'true') return;",
+                  "pm.test('200 and updated', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().data.capacity).to.eql(8); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Disable resource (admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/resources/{{newResourceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resources",
+                "{{newResourceId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.collectionVariables.get('adminAvailable') !== 'true') return;",
+                  "pm.test('200 and inactive', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().data.isActive).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Create booking -> 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceId\": \"{{resourceId}}\",\n  \"start\": \"{{startISO}}\",\n  \"end\": \"{{endISO}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Random 30-min aligned window 2-21 days ahead, 1 hour long (re-runs avoid clashes)",
+                  "const s = new Date();",
+                  "s.setUTCDate(s.getUTCDate() + 2 + Math.floor(Math.random()*20));",
+                  "s.setUTCHours(2 + Math.floor(Math.random()*18), Math.random() < 0.5 ? 0 : 30, 0, 0);",
+                  "const e = new Date(s.getTime() + 60*60*1000);",
+                  "pm.collectionVariables.set('startISO', s.toISOString());",
+                  "pm.collectionVariables.set('endISO', e.toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', () => pm.response.to.have.status(201));",
+                  "const d = pm.response.json().data;",
+                  "pm.test('confirmed', () => pm.expect(d.status).to.eql('confirmed'));",
+                  "pm.collectionVariables.set('bookingId', d._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Duplicate booking -> 409 SLOT_TAKEN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceId\": \"{{resourceId}}\",\n  \"start\": \"{{startISO}}\",\n  \"end\": \"{{endISO}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 409', () => pm.response.to.have.status(409));",
+                  "pm.test('error code SLOT_TAKEN', () => pm.expect(pm.response.json().error.code).to.eql('SLOT_TAKEN'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Overlapping booking (shifted 30 min) -> 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceId\": \"{{resourceId}}\",\n  \"start\": \"{{overlapStart}}\",\n  \"end\": \"{{overlapEnd}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const s = new Date(pm.collectionVariables.get('startISO')); const o = new Date(s.getTime()+30*60*1000); const e = new Date(o.getTime()+60*60*1000);",
+                  "pm.collectionVariables.set('overlapStart', o.toISOString());",
+                  "pm.collectionVariables.set('overlapEnd', e.toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 409', () => pm.response.to.have.status(409));",
+                  "pm.test('error code SLOT_TAKEN', () => pm.expect(pm.response.json().error.code).to.eql('SLOT_TAKEN'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "End before start -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceId\": \"{{resourceId}}\",\n  \"start\": \"2030-01-01T11:00:00.000Z\",\n  \"end\": \"2030-01-01T10:00:00.000Z\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('error code VALIDATION_ERROR', () => pm.expect(pm.response.json().error.code).to.eql('VALIDATION_ERROR'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Misaligned start (10:15) -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceId\": \"{{resourceId}}\",\n  \"start\": \"{{misStart}}\",\n  \"end\": \"{{misEnd}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const s = new Date(); s.setUTCDate(s.getUTCDate()+3); s.setUTCHours(10,15,0,0); const e = new Date(s.getTime()+60*60*1000);",
+                  "pm.collectionVariables.set('misStart', s.toISOString());",
+                  "pm.collectionVariables.set('misEnd', e.toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('error code VALIDATION_ERROR', () => pm.expect(pm.response.json().error.code).to.eql('VALIDATION_ERROR'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Booking in the past -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceId\": \"{{resourceId}}\",\n  \"start\": \"2020-01-01T10:00:00.000Z\",\n  \"end\": \"2020-01-01T11:00:00.000Z\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('error code VALIDATION_ERROR', () => pm.expect(pm.response.json().error.code).to.eql('VALIDATION_ERROR'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Longer than 4h -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceId\": \"{{resourceId}}\",\n  \"start\": \"{{longStart}}\",\n  \"end\": \"{{longEnd}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const s = new Date(); s.setUTCDate(s.getUTCDate()+4); s.setUTCHours(1,0,0,0); const e = new Date(s.getTime()+5*60*60*1000);",
+                  "pm.collectionVariables.set('longStart', s.toISOString());",
+                  "pm.collectionVariables.set('longEnd', e.toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('error code VALIDATION_ERROR', () => pm.expect(pm.response.json().error.code).to.eql('VALIDATION_ERROR'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create booking without token -> 401",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceId\": \"{{resourceId}}\",\n  \"start\": \"{{startISO}}\",\n  \"end\": \"{{endISO}}\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 401', () => pm.response.to.have.status(401));",
+                  "pm.test('error code UNAUTHENTICATED', () => pm.expect(pm.response.json().error.code).to.eql('UNAUTHENTICATED'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "My upcoming bookings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/me?when=upcoming",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings",
+                "me"
+              ],
+              "query": [
+                {
+                  "key": "when",
+                  "value": "upcoming"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "const id = pm.collectionVariables.get('bookingId');",
+                  "pm.test('contains my booking', () => pm.expect(pm.response.json().data.map(b => b._id)).to.include(id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel booking -> 200",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('cancelled', () => pm.expect(pm.response.json().data.status).to.eql('cancelled'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel again -> 409 INVALID_STATE",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 409', () => pm.response.to.have.status(409));",
+                  "pm.test('error code INVALID_STATE', () => pm.expect(pm.response.json().error.code).to.eql('INVALID_STATE'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rebook freed slot -> 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bookings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceId\": \"{{resourceId}}\",\n  \"start\": \"{{startISO}}\",\n  \"end\": \"{{endISO}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('bookingId', pm.response.json().data._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cleanup: cancel rebooked",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/{{bookingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bookings",
+                "{{bookingId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "adminAvailable",
+      "value": ""
+    },
+    {
+      "key": "resourceId",
+      "value": ""
+    },
+    {
+      "key": "newResourceId",
+      "value": ""
+    },
+    {
+      "key": "bookingId",
+      "value": ""
+    },
+    {
+      "key": "startISO",
+      "value": ""
+    },
+    {
+      "key": "endISO",
+      "value": ""
+    }
+  ]
+}
