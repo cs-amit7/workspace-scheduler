@@ -12,7 +12,7 @@ Client: Vite, React, Tailwind, React Router, fetch (no axios). Server: Node (ESM
 4. Booking status badges (Upcoming/Active/Completed) are **computed**, never stored.
 5. Cancelling = `status:'cancelled'` + `slots: []` (soft). Resources are soft-disabled.
 6. Responses follow the envelope in `docs/API.md` (`{data, meta}` / `{error:{code,message,details}}`).
-
+ 
 ## Conventions
 - Controllers are thin; business logic lives in `services/`; pure helpers in `utils/`.
 - Validate every body/query/param with Zod via the `validate` middleware.

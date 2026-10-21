@@ -5,6 +5,7 @@
 2. **No dead ends** — every state (loading, empty, error, conflict) has clear copy and a next action.
 3. **Don't rely on colour alone** — badges carry text; booked slots carry a pattern/label.
 4. **Mobile-first** — usable at 360 px.
+5. **Dark, developer-flavoured theme** — inspired by coding-practice sites (dark panels, red/orange accent, hexagon badges, stat counters). Inspired by, not a copy: no third-party logos, names, copy or assets.
 
 ## 2. Routes & pages
 | Route | Page | Access |
@@ -25,21 +26,27 @@ Unauthenticated users hitting protected routes are redirected to `/login` and re
 
 ### Dashboard
 ```
-┌────────────────────────────────────────────────────────┐
-│ Workspace Scheduler        Dashboard  My Bookings  (A) │
-├────────────────────────────────────────────────────────┤
-│ [Type ▾] [Capacity ≥ _] [Amenities ▾] [Date][From][To] │
-├────────────────────────────────────────────────────────┤
-│ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐     │
-│ │ Orion Room   │ │ Desk A-12    │ │ Nova Room    │     │
-│ │ Room · 8     │ │ Desk · 1     │ │ Room · 12    │     │
-│ │ Floor 2      │ │ Floor 1      │ │ Floor 3      │     │
-│ │ [WiFi][Proj.]│ │ [WiFi][Mon.] │ │ [WiFi][TV]   │     │
-│ │ [View slots] │ │ [View slots] │ │ [View slots] │     │
-│ └──────────────┘ └──────────────┘ └──────────────┘     │
-│                    « 1 2 3 »                           │
-└────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────┐
+│ ◆ WORKSPACE   Dashboard  My Bookings  Admin        (avatar)│  dark top bar
+├────────────────────────────────────────────────────────────┤
+│  Find your spot.                    (red→orange gradient)  │  hero (slim)
+│  Book rooms & desks in seconds.                            │
+├──────────────┬──────────────┬──────────────┬───────────────┤
+│  18  Open now│  3 Upcoming  │  12 Rooms    │  20 Desks     │  stat counters
+├────────────────────────────────────────────────────────────┤
+│ [Type ▾] [Capacity ≥ _] [Amenities ▾] [Date][From][To]     │
+├────────────────────────────────────────────────────────────┤
+│ ┃┌──────────────┐ ┃┌──────────────┐ ┃┌──────────────┐      │
+│ ┃│ Orion Room ⬡8│ ┃│ Desk A-12  ⬡1│ ┃│ Nova Room ⬡12│      │  ┃ = type colour bar
+│ ┃│ Floor 2      │ ┃│ Floor 1      │ ┃│ Floor 3      │      │  ⬡ = capacity hexagon
+│ ┃│ [WiFi][Proj.]│ ┃│ [WiFi][Mon.] │ ┃│ [WiFi][TV]   │      │
+│ ┃│ ● Open now   │ ┃│ ○ Busy       │ ┃│ ● Open now   │      │
+│ ┃│ [View slots] │ ┃│ [View slots] │ ┃│ [View slots] │      │
+│ ┃└──────────────┘ ┃└──────────────┘ ┃└──────────────┘      │
+│                       « 1 2 3 »                            │
+└────────────────────────────────────────────────────────────┘
 ```
+Stat counters use **existing endpoints only** (no new API): *Open now* = `GET /resources?availableFrom=now&availableTo=now+30m` → `meta.total`; *Upcoming* = `GET /bookings/me?when=upcoming&limit=1` → `meta.total`; *Rooms/Desks* = `GET /resources?type=...&limit=1` → `meta.total`.
 
 ### Resource detail / booking
 ```
@@ -75,18 +82,44 @@ Clicking a free cell sets start; clicking a second cell sets end (range highligh
 
 Badges refresh every 30 s via a shared `useNow()` hook.
 
-## 6. Visual tokens (Tailwind)
-| Token | Value |
-|---|---|
-| Primary | `indigo-600` (hover `indigo-700`) |
-| Surface | `white` / `slate-50` page background |
-| Text | `slate-900` / `slate-600` secondary |
-| Success / Warning / Danger | `emerald-600` / `amber-500` / `rose-600` |
-| Radius / shadow | `rounded-xl` / `shadow-sm` |
-| Font | Inter (system fallback) |
-| Spacing | 4-pt scale via Tailwind |
+## 6. Visual theme — dark, red/orange accent (Tailwind tokens)
+Dark is the **default and only theme in v1**. Hex values are this project's own palette (inspired by the dark/red look of coding-practice sites, not copied from any brand). Verify contrast with a checker; adjust if any pair drops below 4.5:1.
 
-Dark mode: optional stretch goal, not in v1.
+| Token (`tailwind.config.js` → `theme.extend.colors`) | Value | Use |
+|---|---|---|
+| `bg` | `#0f1115` | Page background |
+| `panel` | `#1a1d23` | Cards, tables, modals |
+| `panel-2` | `#222630` | Hover/raised surfaces, inputs |
+| `line` | `#2d323d` | Borders, dividers |
+| `ink` | `#e6e8ec` | Primary text |
+| `muted` | `#9aa1ad` | Secondary text |
+| `brand` | `#d93a22` | Filled buttons (white text) |
+| `brand-hover` | `#e5472f` | Button hover |
+| `brand-text` | `#ff6a4d` | Links, active tab, accent text on dark |
+| `amber` | `#f08a24` | Gradient end, warnings |
+| `ok` | `#3ddc84` | Active / success / "Open now" |
+| `info` | `#4aa3ff` | Upcoming |
+| `danger` | `#ff5c5c` | Errors, conflicts |
+| `type-room` / `type-desk` | `#ff6a4d` / `#4aa3ff` | Left colour bar on cards |
+
+**Gradient:** `linear-gradient(135deg, #d93a22 0%, #f08a24 100%)` — hero banner and primary CTA only.
+
+**Type:** Inter for UI; **JetBrains Mono** for times, IDs, counters and amenity chips (the "developer" feel). System fallbacks required.
+
+**Shape & depth:** `rounded-lg`, 1 px `line` borders instead of heavy shadows, subtle `ring` on focus (`brand-text`, 2 px).
+
+### Signature elements
+- **Hexagon capacity badge** (CSS `clip-path`) on every card — number = capacity (desk = 1). Our nod to rank hexagons; purely decorative + `aria-label="Capacity 8"`.
+- **Stat counters** strip under the hero (see Dashboard wireframe).
+- **Type colour bar** on the left edge of each resource card.
+- **Amenity chips** in mono font with a 1 px border, not filled.
+- **Underlined tabs** (active = `brand-text` underline) for Upcoming/Past.
+- **Slot grid:** free = `panel-2`; hover = border `brand-text`; selected range = `brand`; booked = diagonal-stripe pattern + "Booked" label (not colour alone).
+- **Status badges** (dark variants): Upcoming `info`, Active `ok` with pulsing dot, Completed `muted`, Cancelled `muted` + strikethrough.
+- **Tables (admin):** `panel` rows, `line` dividers, sticky header, row hover `panel-2`.
+- **Top bar:** `panel` background, 1 px bottom `line`, wordmark in mono/bold with a `◆` mark (your own wordmark — not a copy of any logo), user avatar dropdown on the right.
+
+Light mode: not in v1 (stretch goal; tokens are CSS variables so it can be added later).
 
 ## 7. States & copy
 | State | Behaviour |

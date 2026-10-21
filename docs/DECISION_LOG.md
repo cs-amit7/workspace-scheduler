@@ -64,12 +64,18 @@ Statuses: Proposed · Accepted · Superseded. Add a new entry whenever the code 
 ### ADR-015 · 2026-10-01 · Accepted — Prompts live inside TASKS.md
 **Why:** one fewer file; prompts stay next to the tasks they implement.
 
+### ADR-016 · 2026-10-02 · Accepted — Dark, coding-practice-inspired UI theme
+**Context:** Owner wants the frontend to feel like a developer/coding-practice site (dark panels, red/orange accent, badges, stat counters) but not be a clone.
+**Decision:** Dark-only theme with the palette and signature elements in `DESIGN.md` §6. Own wordmark, copy and palette; no third-party logos or assets. Stat counters reuse existing endpoints (no new API). Hexagon capacity badge, type colour bar, mono-font chips and striped booked slots (colour is never the only signal).
+**Alternatives:** Light/neutral SaaS look; shipping both themes.
+**Consequences:** Tailwind config carries colour tokens; contrast must be checked on dark surfaces; light mode deferred. Supersedes the old "Dark mode: optional" note.
+
 ---
 ## Open questions / revisit later
 - Add GitHub OAuth? (only if there's a clear reason)
 - Business-hours rule per resource?
 - Refresh tokens / revocation list?
-- Dark mode?
+- Light mode (dark is default as of ADR-016)?
 
 ## Template
 ```

@@ -74,12 +74,12 @@ Before coding, show a short plan. After coding, list files changed and how to ve
 **Prompt:** `TASK: write tests/concurrency/booking.race.test.js per docs/TESTING.md §4. DONE WHEN: test passes 10 consecutive runs.`
 
 ### Phase 7 — Frontend foundation
-- [ ] Tailwind tokens, layout, `Navbar`, `ProtectedRoute`/`AdminRoute`
+- [ ] Tailwind colour tokens + fonts from DESIGN.md §6 (dark theme), layout, `Navbar`, `ProtectedRoute`/`AdminRoute`
 - [ ] `AuthContext` (calls `/auth/me`), `api/` fetch wrapper (credentials, error normalisation, 401 handling)
 - [ ] Login page (Google + demo)
 - [ ] Vite dev proxy `/api → localhost:5000`
 
-**Prompt:** `CONTEXT: docs/DESIGN.md §2-§3,§6. TASK: build the foundation items. CONSTRAINTS: no UI library beyond Tailwind; fetch only (no axios). DONE WHEN: demo login works end-to-end; refresh keeps the session; logout works.`
+**Prompt:** `CONTEXT: docs/DESIGN.md §2-§3 and §6 (dark theme tokens are authoritative). TASK: build the foundation items, including tailwind.config.js colour tokens and Inter + JetBrains Mono fonts. CONSTRAINTS: no UI library beyond Tailwind; fetch only (no axios). DONE WHEN: demo login works end-to-end; refresh keeps the session; logout works.`
 
 ### Phase 8 — Dashboard & filters
 - [ ] `ResourceCard`, `AmenityBadge`, `FilterBar`, `Pagination`, skeleton/empty/error states
