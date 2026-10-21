@@ -3,4 +3,5 @@ export default {
   transform: {},
   testMatch: ['**/tests/**/*.test.js'],
   verbose: true,
+  setupFiles: ['<rootDir>/tests/setup.js'],
 };
