@@ -5,7 +5,9 @@ import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 
 import { config } from './config/env.js';
+import passport from './config/passport.js';
 import healthRouter from './routes/health.js';
+import authRouter from './routes/auth.js';
 import { ApiError } from './utils/ApiError.js';
 import { errorHandler } from './middleware/error.js';
 
@@ -46,8 +48,10 @@ const globalRateLimiter = rateLimit({
 });
 
 app.use(globalRateLimiter);
+app.use(passport.initialize());
 
 app.use('/api/health', healthRouter);
+app.use('/api/auth', authRouter);
 
 // Unknown routes handler
 app.use((req, res, next) => {
