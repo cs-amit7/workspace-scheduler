@@ -1,10 +1,11 @@
 /**
- * Integration tests: GET /api/resources (Phase 4a)
+ * Integration tests: Resources API (Phase 4a + 4b)
  *
  * Uses an in-memory MongoDB. Tokens are obtained from POST /api/auth/demo.
- * Covers: list + pagination meta, each filter, availableFrom/To overlap logic,
- * availableFrom without availableTo → 400, unknown id → 404, malformed id → 400,
- * inactive hidden from users, availability window > 7 days → 400, no user data.
+ * Phase 4a: GET list + pagination meta, each filter, availableFrom/To overlap logic,
+ *   availableFrom without availableTo → 400, unknown id → 404, malformed id → 400,
+ *   inactive hidden from users, availability window > 7 days → 400, no user data.
+ * Phase 4b: POST / PATCH / DELETE — admin-only write endpoints.
  */
 import request from 'supertest';
 import mongoose from 'mongoose';
@@ -690,6 +691,401 @@ describe('Resources API — Phase 4a (read endpoints)', () => {
         .set(authHeader(userToken));
 
       expect(res.status).toBe(404);
+    });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 4b — Admin write endpoints: POST / PATCH / DELETE
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('Resources API — Phase 4b (admin write endpoints)', () => {
+  let userToken;
+  let adminToken;
+
+  beforeAll(async () => {
+    await setupTestDB();
+  });
+
+  beforeEach(async () => {
+    await clearTestDB();
+    userToken = await getDemoToken('user');
+    adminToken = await getDemoToken('admin');
+  });
+
+  afterAll(async () => {
+    await teardownTestDB();
+  });
+
+  // ── helpers ────────────────────────────────────────────────────────────────
+
+  const validBody = {
+    name: 'Orion Room',
+    type: 'room',
+    capacity: 8,
+    location: 'Floor 2',
+    amenities: ['WiFi', 'Projector'],
+    description: 'Glass-walled meeting room',
+  };
+
+  // ── POST /api/resources ────────────────────────────────────────────────────
+
+  describe('POST /api/resources', () => {
+    it('returns 401 when no token is provided', async () => {
+      const res = await request(app).post('/api/resources').send(validBody);
+      expect(res.status).toBe(401);
+      expect(res.body.error.code).toBe('UNAUTHENTICATED');
+    });
+
+    it('returns 403 FORBIDDEN when called by a non-admin user', async () => {
+      const res = await request(app)
+        .post('/api/resources')
+        .set(authHeader(userToken))
+        .send(validBody);
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('FORBIDDEN');
+    });
+
+    it('admin creates a resource and receives 201 with the created document', async () => {
+      const res = await request(app)
+        .post('/api/resources')
+        .set(authHeader(adminToken))
+        .send(validBody);
+
+      expect(res.status).toBe(201);
+      expect(res.body.data).toMatchObject({
+        name: 'Orion Room',
+        type: 'room',
+        capacity: 8,
+        location: 'Floor 2',
+        amenities: ['WiFi', 'Projector'],
+        description: 'Glass-walled meeting room',
+        isActive: true,
+      });
+      expect(res.body.data._id).toBeDefined();
+    });
+
+    it('created resource persists in the database', async () => {
+      const res = await request(app)
+        .post('/api/resources')
+        .set(authHeader(adminToken))
+        .send(validBody);
+
+      expect(res.status).toBe(201);
+      const found = await Resource.findById(res.body.data._id);
+      expect(found).not.toBeNull();
+      expect(found.name).toBe('Orion Room');
+    });
+
+    it('amenities default to [] when omitted', async () => {
+      // Send only the required fields — omit optional amenities and description
+      const bodyNoExtras = { name: validBody.name, type: validBody.type, capacity: validBody.capacity, location: validBody.location };
+      const res = await request(app)
+        .post('/api/resources')
+        .set(authHeader(adminToken))
+        .send(bodyNoExtras);
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.amenities).toEqual([]);
+    });
+
+    it('returns 400 VALIDATION_ERROR when name is missing', async () => {
+      const body = { type: validBody.type, capacity: validBody.capacity, location: validBody.location };
+      const res = await request(app)
+        .post('/api/resources')
+        .set(authHeader(adminToken))
+        .send(body);
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+      expect(res.body.error.details).toBeInstanceOf(Array);
+      expect(res.body.error.details.length).toBeGreaterThan(0);
+    });
+
+    it('returns 400 when type is not room or desk', async () => {
+      const res = await request(app)
+        .post('/api/resources')
+        .set(authHeader(adminToken))
+        .send({ ...validBody, type: 'lounge' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('returns 400 when capacity is less than 1', async () => {
+      const res = await request(app)
+        .post('/api/resources')
+        .set(authHeader(adminToken))
+        .send({ ...validBody, capacity: 0 });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('returns 400 when capacity is not an integer', async () => {
+      const res = await request(app)
+        .post('/api/resources')
+        .set(authHeader(adminToken))
+        .send({ ...validBody, capacity: 2.5 });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('returns 400 when amenities array has more than 20 items', async () => {
+      const res = await request(app)
+        .post('/api/resources')
+        .set(authHeader(adminToken))
+        .send({ ...validBody, amenities: Array.from({ length: 21 }, (_, i) => `Amenity${i}`) });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('returns 400 when amenities array contains an empty string', async () => {
+      const res = await request(app)
+        .post('/api/resources')
+        .set(authHeader(adminToken))
+        .send({ ...validBody, amenities: ['WiFi', ''] });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('returns 400 when an unknown field is supplied (strict schema)', async () => {
+      const res = await request(app)
+        .post('/api/resources')
+        .set(authHeader(adminToken))
+        .send({ ...validBody, unknownField: 'should be rejected' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
+  });
+
+  // ── PATCH /api/resources/:id ───────────────────────────────────────────────
+
+  describe('PATCH /api/resources/:id', () => {
+    let existingResource;
+
+    beforeEach(async () => {
+      [existingResource] = await Resource.insertMany([
+        { name: 'Alpha Room', type: 'room', capacity: 4, location: 'F1', isActive: true },
+      ]);
+    });
+
+    it('returns 401 when no token is provided', async () => {
+      const res = await request(app)
+        .patch(`/api/resources/${existingResource._id}`)
+        .send({ name: 'Updated' });
+      expect(res.status).toBe(401);
+    });
+
+    it('returns 403 FORBIDDEN when called by a non-admin user', async () => {
+      const res = await request(app)
+        .patch(`/api/resources/${existingResource._id}`)
+        .set(authHeader(userToken))
+        .send({ name: 'Updated' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('FORBIDDEN');
+    });
+
+    it('returns 400 for a malformed (non-ObjectId) id param', async () => {
+      const res = await request(app)
+        .patch('/api/resources/not-an-id')
+        .set(authHeader(adminToken))
+        .send({ name: 'Updated' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('returns 404 NOT_FOUND for a valid ObjectId that does not exist', async () => {
+      const nonExistentId = new mongoose.Types.ObjectId().toString();
+      const res = await request(app)
+        .patch(`/api/resources/${nonExistentId}`)
+        .set(authHeader(adminToken))
+        .send({ name: 'Updated' });
+
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('NOT_FOUND');
+    });
+
+    it('admin partially updates a resource — name only — and receives 200', async () => {
+      const res = await request(app)
+        .patch(`/api/resources/${existingResource._id}`)
+        .set(authHeader(adminToken))
+        .send({ name: 'Beta Room' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.name).toBe('Beta Room');
+      // Other fields remain unchanged
+      expect(res.body.data.type).toBe('room');
+      expect(res.body.data.capacity).toBe(4);
+    });
+
+    it('admin can update multiple fields at once', async () => {
+      const res = await request(app)
+        .patch(`/api/resources/${existingResource._id}`)
+        .set(authHeader(adminToken))
+        .send({ name: 'Gamma Room', capacity: 10, amenities: ['TV'] });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toMatchObject({ name: 'Gamma Room', capacity: 10, amenities: ['TV'] });
+    });
+
+    it('admin can set isActive=false via PATCH', async () => {
+      const res = await request(app)
+        .patch(`/api/resources/${existingResource._id}`)
+        .set(authHeader(adminToken))
+        .send({ isActive: false });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.isActive).toBe(false);
+    });
+
+    it('admin can re-activate a disabled resource via PATCH isActive=true', async () => {
+      // First disable it
+      await Resource.findByIdAndUpdate(existingResource._id, { isActive: false });
+
+      const res = await request(app)
+        .patch(`/api/resources/${existingResource._id}`)
+        .set(authHeader(adminToken))
+        .send({ isActive: true });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.isActive).toBe(true);
+    });
+
+    it('returns 400 when an unknown field is supplied (strict schema)', async () => {
+      const res = await request(app)
+        .patch(`/api/resources/${existingResource._id}`)
+        .set(authHeader(adminToken))
+        .send({ unknownField: 'nope' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('returns 400 when capacity is invalid (e.g. 0) in PATCH body', async () => {
+      const res = await request(app)
+        .patch(`/api/resources/${existingResource._id}`)
+        .set(authHeader(adminToken))
+        .send({ capacity: 0 });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
+  });
+
+  // ── DELETE /api/resources/:id ──────────────────────────────────────────────
+
+  describe('DELETE /api/resources/:id', () => {
+    let activeResource;
+
+    beforeEach(async () => {
+      [activeResource] = await Resource.insertMany([
+        { name: 'To Delete Room', type: 'desk', capacity: 1, location: 'F3', isActive: true },
+      ]);
+    });
+
+    it('returns 401 when no token is provided', async () => {
+      const res = await request(app).delete(`/api/resources/${activeResource._id}`);
+      expect(res.status).toBe(401);
+    });
+
+    it('returns 403 FORBIDDEN when called by a non-admin user', async () => {
+      const res = await request(app)
+        .delete(`/api/resources/${activeResource._id}`)
+        .set(authHeader(userToken));
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('FORBIDDEN');
+    });
+
+    it('returns 400 for a malformed (non-ObjectId) id param', async () => {
+      const res = await request(app)
+        .delete('/api/resources/bad-id')
+        .set(authHeader(adminToken));
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('returns 404 NOT_FOUND for a valid ObjectId that does not exist', async () => {
+      const nonExistentId = new mongoose.Types.ObjectId().toString();
+      const res = await request(app)
+        .delete(`/api/resources/${nonExistentId}`)
+        .set(authHeader(adminToken));
+
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('NOT_FOUND');
+    });
+
+    it('admin soft-disables a resource: returns 200 with isActive=false', async () => {
+      const res = await request(app)
+        .delete(`/api/resources/${activeResource._id}`)
+        .set(authHeader(adminToken));
+
+      expect(res.status).toBe(200);
+      expect(res.body.data._id).toBe(activeResource._id.toString());
+      expect(res.body.data.isActive).toBe(false);
+    });
+
+    it('soft-disabled resource is actually updated in the database', async () => {
+      await request(app)
+        .delete(`/api/resources/${activeResource._id}`)
+        .set(authHeader(adminToken));
+
+      const found = await Resource.findById(activeResource._id);
+      expect(found.isActive).toBe(false);
+      // Document still exists — it is NOT a hard delete
+      expect(found).not.toBeNull();
+    });
+
+    it('soft-disabled resource disappears from the normal GET /resources list', async () => {
+      await request(app)
+        .delete(`/api/resources/${activeResource._id}`)
+        .set(authHeader(adminToken));
+
+      const res = await request(app)
+        .get('/api/resources')
+        .set(authHeader(userToken));
+
+      expect(res.status).toBe(200);
+      const ids = res.body.data.map((r) => r._id);
+      expect(ids).not.toContain(activeResource._id.toString());
+    });
+
+    it('soft-disabled resource appears in GET /resources?includeInactive=true for an admin', async () => {
+      await request(app)
+        .delete(`/api/resources/${activeResource._id}`)
+        .set(authHeader(adminToken));
+
+      const res = await request(app)
+        .get('/api/resources?includeInactive=true')
+        .set(authHeader(adminToken));
+
+      expect(res.status).toBe(200);
+      const ids = res.body.data.map((r) => r._id);
+      expect(ids).toContain(activeResource._id.toString());
+    });
+
+    it('calling DELETE twice on the same resource still returns 200 (idempotent soft-disable)', async () => {
+      // First delete
+      await request(app)
+        .delete(`/api/resources/${activeResource._id}`)
+        .set(authHeader(adminToken));
+
+      // Second delete — resource exists but is already inactive; service finds it and sets isActive=false again
+      const res = await request(app)
+        .delete(`/api/resources/${activeResource._id}`)
+        .set(authHeader(adminToken));
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.isActive).toBe(false);
     });
   });
 });
