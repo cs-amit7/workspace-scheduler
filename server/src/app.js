@@ -8,6 +8,7 @@ import { config } from './config/env.js';
 import passport from './config/passport.js';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
+import resourcesRouter from './routes/resources.js';
 import { ApiError } from './utils/ApiError.js';
 import { errorHandler } from './middleware/error.js';
 
@@ -52,6 +53,7 @@ app.use(passport.initialize());
 
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/resources', resourcesRouter);
 
 // Unknown routes handler
 app.use((req, res, next) => {
