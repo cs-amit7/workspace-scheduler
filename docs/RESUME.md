@@ -5,23 +5,24 @@
 ## 1. Numbers to collect (fill after Phase 16)
 | Metric | Value | Where to get it |
 |---|---|---|
-| Parallel requests in concurrency test (N) | [ ] | `booking.race.test.js` |
-| Successful / conflicted / double-bookings | [ ] / [ ] / [ ] | same test output |
-| Total automated tests | [ ] | CI log |
-| Backend coverage % (services + utils) | [ ] | coverage report |
-| Postman assertions passing | [ ] | Newman summary |
-| Lighthouse (Perf / A11y / Best Practices / SEO) | [ ] | Chrome Lighthouse on live URL |
-| Live URL | [ ] | Vercel |
-| GitHub repo | [ ] | |
-| API docs link | [ ] | Postman published docs |
+| Parallel requests in concurrency test (N) | 25 | `booking.race.test.js` |
+| Successful / conflicted / double-bookings | 1 / 24 / 0 | same test output |
+| Concurrency stability | 10 / 10 consecutive runs passed | the 10-run loop |
+| Total automated tests | 169 across 12 suites (server only so far) | CI log |
+| Backend coverage | services 94.6% statements, 97.6% lines; utils 95.8% / 95.7%; whole server 86.4% / 88.2% | coverage report |
+| Postman assertions passing | [ ] (pending clean Newman run; 47 assertions in the collection) | Newman summary |
+| Lighthouse (Perf / A11y / Best Practices / SEO) | [ ] pending | Chrome Lighthouse on live URL |
+| Live URL | [ ] pending | Vercel |
+| GitHub repo | https://github.com/cs-amit7/workspace-scheduler | |
+| API docs link | [ ] pending | Postman published docs |
 
 ## 2. Project header (resume)
 **Smart Workspace Scheduler** — MERN · Google OAuth 2.0 · MongoDB Atlas · Vercel · Render · GitHub Actions | [Live demo] · [GitHub]
 
 ## 3. Bullet options (pick 3–4)
 - Built a full-stack workspace booking platform (React, Node/Express, MongoDB) where users browse rooms/desks by amenity and capacity and reserve 30-minute slots; deployed on Vercel, Render and MongoDB Atlas.
-- Eliminated double-booking at the database level using a unique partial multikey index on time slots; verified with a concurrency test of [N] parallel requests yielding exactly 1 success and [N-1] `409` conflicts.
-- Implemented Google OAuth 2.0 (Passport.js) with JWT in httpOnly cookies and role-based access control (user/admin), plus rate limiting, Helmet, CORS whitelisting and Zod request validation.
+- Eliminated double-booking at the database level using a unique partial multikey index on 30-minute time slots; a concurrency suite firing up to 60 parallel requests per scenario confirmed exactly one winner per contested slot and zero double-bookings, stable across 10 consecutive runs.
+- Built and tested a REST API with Google OAuth 2.0 (Passport.js), JWT auth in httpOnly cookies, role-based access, rate limiting and Zod validation: 169 automated tests with 94%+ coverage on the service and utility layers, run on every push through GitHub Actions CI.
 - Designed and documented a REST API; automated contract tests in Postman/Newman ([N] assertions) and unit/integration tests ([N] tests, [N]% service-layer coverage) run in a GitHub Actions CI pipeline.
 - Handled time correctly end-to-end (UTC storage, local display) and computed live Upcoming/Active/Completed status badges client-side, avoiding stale stored state.
 - Shipped a responsive, keyboard-accessible UI with a 30-minute availability grid (Lighthouse accessibility [N]).
