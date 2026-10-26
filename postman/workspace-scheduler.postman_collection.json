@@ -1107,5 +1107,19 @@
       "key": "endISO",
       "value": ""
     }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Demo login sets a cookie that the server reads before the Bearer header.",
+          "// Clear the jar so each request only uses the auth it declares.",
+          "const baseUrl = pm.variables.get('baseUrl');",
+          "pm.cookies.jar().clear(baseUrl, function (err) { if (err) { console.log('cookie clear failed: ' + err); } });"
+        ]
+      }
+    }
   ]
 }
