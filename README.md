@@ -3,7 +3,7 @@
 Browse meeting rooms and study desks, check amenities, and book 30-minute slots — with **database-enforced protection against double-booking**.
 
 <!-- TODO: replace after deploy -->
-**Live demo:** _https://your-app.vercel.app_ · **API docs:** _Postman published link_ · ![CI](https://github.com/<user>/<repo>/actions/workflows/ci.yml/badge.svg)
+**Live demo:** _https://your-app.vercel.app_ · **API docs:** _Postman published link_ · ![CI](https://github.com/cs-amit7/workspace-scheduler/actions/workflows/ci.yml/badge.svg)
 
 <!-- TODO: add screenshot / GIF of dashboard and slot grid -->
 
@@ -38,7 +38,7 @@ React → Express route → service-layer rules → MongoDB (unique index decide
 **Prerequisites:** Node LTS, a MongoDB Atlas (or local) database, a Google OAuth client.
 
 ```bash
-git clone https://github.com/<user>/<repo>.git && cd <repo>
+git clone https://github.com/cs-amit7/workspace-scheduler.git && cd workspace-scheduler
 
 # API
 cd server
