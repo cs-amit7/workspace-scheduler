@@ -40,6 +40,7 @@ export async function client(endpoint, options = {}) {
     ...options,
     credentials: options.credentials || 'include',
     headers,
+    ...(options.signal ? { signal: options.signal } : {}),
   };
 
   if (

@@ -115,4 +115,22 @@ describe('API client', () => {
       })
     );
   });
+
+  it('passes AbortSignal through to fetch', async () => {
+    let capturedOptions = {};
+    const controller = new AbortController();
+
+    global.fetch = vi.fn().mockImplementation((url, options) => {
+      capturedOptions = options;
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({ data: [] }),
+      });
+    });
+
+    await client('/resources', { signal: controller.signal });
+    expect(capturedOptions.signal).toBe(controller.signal);
+  });
 });

@@ -7,6 +7,7 @@ import Login from './pages/Login.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import MyBookings from './pages/MyBookings.jsx';
 import Admin from './pages/Admin.jsx';
+import ResourceDetail from './pages/ResourceDetail.jsx';
 import NotFound from './pages/NotFound.jsx';
 
 export function AppLayout() {
@@ -27,6 +28,7 @@ export function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/resources/:id" element={<ResourceDetail />} />
           <Route path="/my-bookings" element={<MyBookings />} />
           <Route
             path="/admin"
