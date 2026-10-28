@@ -1,24 +1,54 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx';
+import AdminRoute from './components/AdminRoute.jsx';
+import Navbar from './components/Navbar.jsx';
+import Login from './pages/Login.jsx';
+import Dashboard from './pages/Dashboard.jsx';
+import MyBookings from './pages/MyBookings.jsx';
+import Admin from './pages/Admin.jsx';
+import NotFound from './pages/NotFound.jsx';
 
-function Home() {
+export function AppLayout() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-      <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-        Smart Workspace Scheduler
-      </h1>
-      <p className="mt-3 text-base text-slate-600 max-w-md">
-        Browse and book rooms and desks seamlessly. Foundation ready.
-      </p>
+    <div className="min-h-screen bg-bg text-ink flex flex-col">
+      <Navbar />
+      <main className="flex-1">
+        <Outlet />
+      </main>
     </div>
+  );
+}
+
+export function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/my-bookings" element={<MyBookings />} />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <Admin />
+              </AdminRoute>
+            }
+          />
+        </Route>
+      </Route>
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 }
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
