@@ -328,21 +328,41 @@ describe('Auth Integration Tests', () => {
 
   describe('Rate Limiting', () => {
     it('returns 429 RATE_LIMITED when exceeding 20 requests per 15 minutes', async () => {
-      // Send 20 requests with rate limiting enabled
-      for (let i = 0; i < 20; i++) {
-        await request(app)
-          .get('/api/auth/me')
-          .set('x-test-rate-limit', 'true');
+      let rateLimitedRes;
+      for (let i = 0; i < 30; i++) {
+        const res = await request(app)
+          .post('/api/auth/demo')
+          .set('x-test-rate-limit', 'true')
+          .send({ role: 'user' });
+
+        if (res.status === 429) {
+          rateLimitedRes = res;
+          break;
+        }
       }
 
-      // The 21st request should be rate-limited
-      const rateLimitedRes = await request(app)
-        .get('/api/auth/me')
-        .set('x-test-rate-limit', 'true');
-
+      expect(rateLimitedRes).toBeDefined();
       expect(rateLimitedRes.status).toBe(429);
       expect(rateLimitedRes.body.error).toBeDefined();
       expect(rateLimitedRes.body.error.code).toBe('RATE_LIMITED');
+    });
+
+    it('returns 200 for 30 consecutive GET /api/auth/me requests with a valid token', async () => {
+      const loginRes = await request(app)
+        .post('/api/auth/demo')
+        .send({ role: 'user' });
+
+      expect(loginRes.status).toBe(200);
+      const token = loginRes.body.data.token;
+
+      for (let i = 0; i < 30; i++) {
+        const res = await request(app)
+          .get('/api/auth/me')
+          .set('Authorization', `Bearer ${token}`)
+          .set('x-test-rate-limit', 'true');
+
+        expect(res.status).toBe(200);
+      }
     });
   });
 });

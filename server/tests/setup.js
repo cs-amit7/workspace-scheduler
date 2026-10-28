@@ -12,3 +12,5 @@ process.env.CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 process.env.ADMIN_EMAILS = process.env.ADMIN_EMAILS || 'admin@example.com';
 process.env.ENABLE_DEMO_ADMIN = process.env.ENABLE_DEMO_ADMIN || 'true';
 process.env.BOOKING_RATE_LIMIT_MAX = process.env.BOOKING_RATE_LIMIT_MAX || '1000';
+// Always test with the production default, even if a developer's local .env raises it.
+process.env.AUTH_RATE_LIMIT_MAX = '20';

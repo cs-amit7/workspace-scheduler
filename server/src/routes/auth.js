@@ -16,7 +16,7 @@ const router = Router();
 
 const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: Number(process.env.AUTH_RATE_LIMIT_MAX) || 20,
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => process.env.NODE_ENV === 'test' && req.headers['x-test-rate-limit'] !== 'true',
@@ -31,11 +31,9 @@ const authRateLimiter = rateLimit({
   },
 });
 
-router.use(authRateLimiter);
-
-router.get('/google', googleAuth);
-router.get('/google/callback', googleCallback);
-router.post('/demo', validate(demoLoginSchema), demoLogin);
+router.get('/google', authRateLimiter, googleAuth);
+router.get('/google/callback', authRateLimiter, googleCallback);
+router.post('/demo', authRateLimiter, validate(demoLoginSchema), demoLogin);
 router.get('/me', auth, getMe);
 router.post('/logout', auth, logout);
 
