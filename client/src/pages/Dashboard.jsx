@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import useResources from '../hooks/useResources.js';
 import ResourceCard from '../components/ResourceCard.jsx';
@@ -5,10 +6,16 @@ import Pagination from '../components/Pagination.jsx';
 import Skeleton from '../components/Skeleton.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import ErrorState from '../components/ErrorState.jsx';
+import StatStrip from '../components/StatStrip.jsx';
+import FilterBar from '../components/FilterBar.jsx';
+import { localToUtcIso } from '../utils/time.js';
 
 /**
- * Dashboard page displaying resources grid with pagination,
- * loading skeletons, empty state, and cold-start slow notice.
+ * Dashboard page displaying:
+ * - Slim hero banner (.bg-brand-gradient)
+ * - StatStrip with 4 parallel metric counters
+ * - FilterBar with full URL search query synchronization
+ * - Resources grid with pagination, loading skeletons, and empty/error states
  */
 export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -16,10 +23,35 @@ export default function Dashboard() {
   const pageParam = parseInt(searchParams.get('page'), 10);
   const page = Number.isInteger(pageParam) && pageParam > 0 ? pageParam : 1;
 
-  const { items, meta, loading, error, slow, reload } = useResources({
-    page,
-    limit: 12,
-  });
+  const date = searchParams.get('date') || '';
+  const from = searchParams.get('from') || '';
+  const to = searchParams.get('to') || '';
+
+  // Availability is applied only when date, from, and to are all set and from < to
+  const isAvailabilityValid = Boolean(date && from && to && from < to);
+  const availableFrom = isAvailabilityValid ? localToUtcIso(date, from) : undefined;
+  const availableTo = isAvailabilityValid ? localToUtcIso(date, to) : undefined;
+
+  const type = searchParams.get('type') || undefined;
+  const minCapacity = searchParams.get('minCapacity') || undefined;
+  const amenities = searchParams.getAll('amenity');
+  const q = searchParams.get('q') || undefined;
+
+  const queryParams = useMemo(
+    () => ({
+      page,
+      limit: 12,
+      ...(type ? { type } : {}),
+      ...(minCapacity ? { minCapacity } : {}),
+      ...(amenities.length > 0 ? { amenity: amenities } : {}),
+      ...(q ? { q } : {}),
+      ...(availableFrom ? { availableFrom } : {}),
+      ...(availableTo ? { availableTo } : {}),
+    }),
+    [page, type, minCapacity, amenities, q, availableFrom, availableTo]
+  );
+
+  const { items, meta, loading, error, slow, reload } = useResources(queryParams);
 
   const totalPages =
     meta && meta.total && meta.limit
@@ -42,11 +74,28 @@ export default function Dashboard() {
     }
   };
 
+  const handleClearFilters = () => {
+    setSearchParams(new URLSearchParams());
+  };
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <div className="mb-6 flex flex-col gap-1">
-        <h1 className="text-2xl font-bold font-sans text-ink">Dashboard</h1>
-        <p className="text-sm text-muted">Browse and book rooms and desks.</p>
+      <h1 className="sr-only">Dashboard</h1>
+
+      {/* Slim hero */}
+      <div className="mb-6 rounded-lg bg-brand-gradient p-6 text-white sm:p-8">
+        <h2 className="font-sans text-2xl font-bold sm:text-3xl">Find your spot.</h2>
+        <p className="mt-1 text-sm text-white/90">Book rooms & desks in seconds.</p>
+      </div>
+
+      {/* Stat counters strip */}
+      <div className="mb-6">
+        <StatStrip />
+      </div>
+
+      {/* Filter bar */}
+      <div className="mb-6">
+        <FilterBar onClear={handleClearFilters} />
       </div>
 
       {slow && (
@@ -106,6 +155,8 @@ export default function Dashboard() {
         <EmptyState
           title="No resources found"
           message="No resources match your filters."
+          actionText="Clear filters"
+          onAction={handleClearFilters}
         />
       )}
 
