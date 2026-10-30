@@ -26,3 +26,15 @@ export async function listMyBookings(params = {}, options = {}) {
 export default {
   listMyBookings,
 };
+/**
+ * Create a booking. Times must be UTC ISO strings on 30-minute boundaries.
+ * @param {{ resourceId: string, start: string, end: string }} booking
+ * @param {{ signal?: AbortSignal }} [options]
+ */
+export async function createBooking({ resourceId, start, end }, options = {}) {
+  return client('/bookings', {
+    method: 'POST',
+    body: { resourceId, start, end },
+    signal: options?.signal,
+  });
+}

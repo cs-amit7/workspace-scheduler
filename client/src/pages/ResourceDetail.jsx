@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useResource } from '../hooks/useResource.js';
 import { useAvailability } from '../hooks/useAvailability.js';
+import { createBooking } from '../api/bookings.js';
 import { localDayWindowUtc, buildDaySlots, formatLocalRange } from '../utils/time.js';
 import DatePicker from '../components/DatePicker.jsx';
 import SlotGrid from '../components/SlotGrid.jsx';
@@ -10,15 +11,17 @@ import Skeleton from '../components/Skeleton.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import ErrorState from '../components/ErrorState.jsx';
 
+const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
 /**
- * ResourceDetail page showing workspace metadata, DatePicker,
- * availability SlotGrid, and read-only booking selection summary.
+ * ResourceDetail page: workspace info, DatePicker, availability SlotGrid and
+ * the booking panel (select a window, confirm, handle conflicts).
  */
 export default function ResourceDetail() {
   const { id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Compute today's local date string (YYYY-MM-DD)
+  // Today's local date string (YYYY-MM-DD)
   const todayStr = useMemo(() => {
     const now = new Date();
     const y = now.getFullYear();
@@ -30,8 +33,11 @@ export default function ResourceDetail() {
   const selectedDate = searchParams.get('date') || todayStr;
 
   const [selection, setSelection] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [bookingError, setBookingError] = useState(null);
+  const [confirmation, setConfirmation] = useState(null);
+  const inFlight = useRef(false);
 
-  // Load resource details
   const {
     data: resource,
     loading: resourceLoading,
@@ -39,10 +45,9 @@ export default function ResourceDetail() {
     reload: reloadResource,
   } = useResource(id);
 
-  // Compute local day UTC window [00:00, next 00:00)
+  // Local day as a UTC window [00:00, next 00:00)
   const dayWindow = useMemo(() => localDayWindowUtc(selectedDate), [selectedDate]);
 
-  // Load availability
   const {
     data: availability,
     loading: availLoading,
@@ -50,7 +55,6 @@ export default function ResourceDetail() {
     reload: reloadAvail,
   } = useAvailability(id, dayWindow);
 
-  // Generate day slots in local time
   const cells = useMemo(() => buildDaySlots(selectedDate), [selectedDate]);
 
   // Map booked intervals to cell indexes
@@ -75,6 +79,27 @@ export default function ResourceDetail() {
     return set;
   }, [cells, availability]);
 
+  // The chosen window as UTC ISO strings, or null until a range is picked
+  const selectedWindow = useMemo(() => {
+    if (!Number.isInteger(selection?.startIndex) || !Number.isInteger(selection?.endIndex)) {
+      return null;
+    }
+    const startCell = cells[selection.startIndex];
+    const endCell = cells[selection.endIndex];
+    if (!startCell || !endCell) return null;
+    return { start: startCell.startIso, end: endCell.endIso };
+  }, [selection, cells]);
+
+  const selectionSummary = selectedWindow
+    ? formatLocalRange(selectedWindow.start, selectedWindow.end)
+    : null;
+
+  const handleSelect = (next) => {
+    setBookingError(null);
+    setConfirmation(null);
+    setSelection(next);
+  };
+
   const handleDateChange = (newDate) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -82,24 +107,43 @@ export default function ResourceDetail() {
       return next;
     });
     setSelection(null);
+    setBookingError(null);
+    setConfirmation(null);
   };
 
-  // Selection summary text using formatLocalRange
-  const selectionSummary = useMemo(() => {
-    if (
-      !selection ||
-      selection.startIndex === null ||
-      selection.startIndex === undefined ||
-      selection.endIndex === null ||
-      selection.endIndex === undefined
-    ) {
-      return null;
+  const handleConfirm = async () => {
+    if (!selectedWindow || inFlight.current) return;
+
+    inFlight.current = true;
+    setSubmitting(true);
+    setBookingError(null);
+    setConfirmation(null);
+
+    try {
+      await createBooking({
+        resourceId: id,
+        start: selectedWindow.start,
+        end: selectedWindow.end,
+      });
+      setConfirmation(formatLocalRange(selectedWindow.start, selectedWindow.end));
+      setSelection(null);
+      reloadAvail();
+    } catch (err) {
+      if (err?.code === 'SLOT_TAKEN') {
+        // Someone else got there first: refresh the grid so the taken slots show as booked.
+        setBookingError('Someone just booked part of that time. Please pick another slot.');
+        setSelection(null);
+        reloadAvail();
+      } else if (err?.status === 429) {
+        setBookingError('Too many booking attempts. Please wait a few minutes and try again.');
+      } else {
+        setBookingError(err?.message || 'Could not complete the booking. Please try again.');
+      }
+    } finally {
+      inFlight.current = false;
+      setSubmitting(false);
     }
-    const startCell = cells[selection.startIndex];
-    const endCell = cells[selection.endIndex];
-    if (!startCell || !endCell) return null;
-    return formatLocalRange(startCell.startIso, endCell.endIso);
-  }, [selection, cells]);
+  };
 
   if (resourceLoading) {
     return (
@@ -176,7 +220,7 @@ export default function ResourceDetail() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      {/* Top breadcrumb / navigation */}
+      {/* Breadcrumb */}
       <nav className="mb-6 flex items-center gap-2 text-xs font-mono text-muted" aria-label="Breadcrumb">
         <Link to="/" className="hover:text-brand-text transition-colors">
           Dashboard
@@ -186,9 +230,8 @@ export default function ResourceDetail() {
       </nav>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* Left column: Resource info & SlotGrid */}
+        {/* Left column: resource info and slot grid */}
         <div className="space-y-6 lg:col-span-2">
-          {/* Resource Header Card */}
           <section className={`rounded-lg border border-line ${leftColorClass} border-l-4 bg-panel p-6`}>
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -198,19 +241,14 @@ export default function ResourceDetail() {
                 <h1 className="mt-0.5 text-2xl sm:text-3xl font-bold font-sans text-ink">
                   {name}
                 </h1>
-                {location && (
-                  <p className="mt-1 text-sm text-muted font-sans">
-                    {location}
-                  </p>
-                )}
+                {location && <p className="mt-1 text-sm text-muted font-sans">{location}</p>}
               </div>
 
               {/* Hexagon capacity badge */}
               <div
                 className="flex h-8 w-8 flex-shrink-0 items-center justify-center bg-panel-2 text-xs font-mono font-bold text-ink"
                 style={{
-                  clipPath:
-                    'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
+                  clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
                 }}
                 aria-label={`Capacity ${capacity}`}
                 title={`Capacity ${capacity}`}
@@ -219,7 +257,6 @@ export default function ResourceDetail() {
               </div>
             </div>
 
-            {/* Amenity chips */}
             {amenities.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-2" aria-label="Amenities">
                 {amenities.map((amenity) => (
@@ -228,7 +265,6 @@ export default function ResourceDetail() {
               </div>
             )}
 
-            {/* Description */}
             {description && (
               <p className="mt-4 text-sm text-muted leading-relaxed border-t border-line/50 pt-4">
                 {description}
@@ -236,13 +272,10 @@ export default function ResourceDetail() {
             )}
           </section>
 
-          {/* Availability & Slot Grid Section */}
           <section className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-ink font-sans">
-                  Available slots
-                </h2>
+                <h2 className="text-lg font-semibold text-ink font-sans">Available slots</h2>
                 <p className="text-xs text-muted">
                   Choose a date and select consecutive slots up to 4 hours.
                 </p>
@@ -274,29 +307,26 @@ export default function ResourceDetail() {
                 cells={cells}
                 bookedIndexes={bookedIndexes}
                 selection={selection}
-                onSelect={setSelection}
+                onSelect={handleSelect}
               />
             )}
           </section>
         </div>
 
-        {/* Right column: Read-only Booking Panel */}
+        {/* Right column: booking panel */}
         <div>
           <div className="sticky top-6 rounded-lg border border-line bg-panel p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-ink font-sans">
-              Book this {type}
-            </h2>
-            <p className="mt-1 text-xs text-muted">
-              Select slots on the grid to create a booking.
-            </p>
+            <h2 className="text-lg font-semibold text-ink font-sans">Book this {type}</h2>
+            <p className="mt-1 text-xs text-muted">Select slots on the grid to create a booking.</p>
 
             <div className="mt-6 space-y-4">
               <div>
                 <span className="text-[11px] font-mono uppercase tracking-wider text-muted">
                   Date
                 </span>
-                <p className="mt-0.5 font-mono text-sm text-ink">
-                  {selectedDate}
+                <p className="mt-0.5 font-mono text-sm text-ink">{selectedDate}</p>
+                <p className="mt-0.5 font-mono text-[11px] text-muted">
+                  Times shown in your local time ({timeZone})
                 </p>
               </div>
 
@@ -318,17 +348,44 @@ export default function ResourceDetail() {
                 )}
               </div>
 
-              <div className="border-t border-line/60 pt-4">
+              <div className="space-y-3 border-t border-line/60 pt-4">
                 <button
                   type="button"
-                  disabled
-                  className="w-full rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white opacity-50 cursor-not-allowed transition-colors"
+                  onClick={handleConfirm}
+                  disabled={!selectedWindow || submitting}
+                  className="w-full rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-text disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Confirm booking
+                  {submitting ? 'Booking...' : 'Confirm booking'}
                 </button>
-                <p className="mt-2 text-center text-[11px] text-muted">
-                  Booking submissions will be enabled in Phase 9b.
-                </p>
+
+                {bookingError && (
+                  <p
+                    role="alert"
+                    data-testid="booking-error"
+                    className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger"
+                  >
+                    {bookingError}
+                  </p>
+                )}
+
+                {confirmation && (
+                  <div
+                    role="status"
+                    data-testid="booking-confirmation"
+                    className="rounded-lg border border-ok/40 bg-ok/10 px-3 py-2 text-xs text-ok"
+                  >
+                    <p className="font-semibold">Booked!</p>
+                    <p className="mt-0.5 font-mono">
+                      {selectedDate} {confirmation}
+                    </p>
+                    <Link
+                      to="/my-bookings"
+                      className="mt-1 inline-block underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-text"
+                    >
+                      View my bookings
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           </div>
