@@ -76,7 +76,145 @@ export function utcIsoToLocalParts(iso) {
   };
 }
 
+/**
+ * Converts a date string (YYYY-MM-DD) into UTC ISO strings covering the user's
+ * local day half-open interval [00:00, next 00:00).
+ *
+ * @param {string} dateString Date formatted as YYYY-MM-DD
+ * @returns {{ from: string, to: string }|null}
+ */
+export function localDayWindowUtc(dateString) {
+  if (!dateString || typeof dateString !== 'string') {
+    return null;
+  }
+
+  const [yearStr, monthStr, dayStr] = dateString.split('-');
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+  const day = parseInt(dayStr, 10);
+
+  if (
+    Number.isNaN(year) ||
+    Number.isNaN(month) ||
+    Number.isNaN(day)
+  ) {
+    return null;
+  }
+
+  const start = new Date(year, month - 1, day, 0, 0, 0, 0);
+  const end = new Date(year, month - 1, day + 1, 0, 0, 0, 0);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return null;
+  }
+
+  return {
+    from: start.toISOString(),
+    to: end.toISOString(),
+  };
+}
+
+/**
+ * Generates 30-minute slot cells in local time for a given day.
+ *
+ * @param {string} dateString Date formatted as YYYY-MM-DD
+ * @param {object} [options={}]
+ * @param {number} [options.startHour=7] Starting hour (0-23)
+ * @param {number} [options.endHour=22] Ending hour (0-24)
+ * @returns {Array<{ startIso: string, endIso: string, label: string }>}
+ */
+export function buildDaySlots(dateString, { startHour = 7, endHour = 22 } = {}) {
+  if (!dateString || typeof dateString !== 'string') {
+    return [];
+  }
+
+  const [yearStr, monthStr, dayStr] = dateString.split('-');
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+  const day = parseInt(dayStr, 10);
+
+  if (
+    Number.isNaN(year) ||
+    Number.isNaN(month) ||
+    Number.isNaN(day)
+  ) {
+    return [];
+  }
+
+  const slots = [];
+
+  for (let h = startHour; h < endHour; h += 1) {
+    const padHour = String(h).padStart(2, '0');
+
+    // First half-hour slot: h:00 to h:30
+    const start0 = new Date(year, month - 1, day, h, 0, 0, 0);
+    const end0 = new Date(year, month - 1, day, h, 30, 0, 0);
+    slots.push({
+      startIso: start0.toISOString(),
+      endIso: end0.toISOString(),
+      label: `${padHour}:00`,
+    });
+
+    // Second half-hour slot: h:30 to (h+1):00
+    const start1 = new Date(year, month - 1, day, h, 30, 0, 0);
+    const end1 = new Date(year, month - 1, day, h + 1, 0, 0, 0);
+    slots.push({
+      startIso: start1.toISOString(),
+      endIso: end1.toISOString(),
+      label: `${padHour}:30`,
+    });
+  }
+
+  return slots;
+}
+
+/**
+ * Formats a local start and end time range with a duration string,
+ * e.g. "10:00-11:30 (1h 30m)".
+ *
+ * @param {string|Date} startIso
+ * @param {string|Date} endIso
+ * @returns {string}
+ */
+export function formatLocalRange(startIso, endIso) {
+  if (!startIso || !endIso) {
+    return '';
+  }
+
+  const startParts = utcIsoToLocalParts(startIso);
+  const endParts = utcIsoToLocalParts(endIso);
+
+  if (!startParts || !endParts) {
+    return '';
+  }
+
+  const startMs = new Date(startIso).getTime();
+  const endMs = new Date(endIso).getTime();
+
+  if (Number.isNaN(startMs) || Number.isNaN(endMs) || endMs <= startMs) {
+    return `${startParts.time}-${endParts.time}`;
+  }
+
+  const diffMinutes = Math.max(0, Math.round((endMs - startMs) / (60 * 1000)));
+  const hours = Math.floor(diffMinutes / 60);
+  const mins = diffMinutes % 60;
+
+  let duration = '';
+  if (hours > 0 && mins > 0) {
+    duration = `${hours}h ${mins}m`;
+  } else if (hours > 0) {
+    duration = `${hours}h`;
+  } else {
+    duration = `${mins}m`;
+  }
+
+  return `${startParts.time}-${endParts.time} (${duration})`;
+}
+
 export default {
   localToUtcIso,
   utcIsoToLocalParts,
+  localDayWindowUtc,
+  buildDaySlots,
+  formatLocalRange,
 };

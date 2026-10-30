@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import client from './client.js';
-import { listResources, buildResourceQuery } from './resources.js';
+import { listResources, buildResourceQuery, getResource, getAvailability } from './resources.js';
 
 vi.mock('./client.js', () => ({
   default: vi.fn(),
@@ -66,6 +66,48 @@ describe('resources API', () => {
         { signal: controller.signal }
       );
       expect(result).toEqual(fakeResponse);
+    });
+  });
+
+  describe('getResource', () => {
+    it('calls client with resource ID and passes AbortSignal', async () => {
+      const fakeResource = { data: { _id: 'res-123', name: 'Orion Room' } };
+      client.mockResolvedValueOnce(fakeResource);
+
+      const controller = new AbortController();
+      const result = await getResource('res-123', { signal: controller.signal });
+
+      expect(client).toHaveBeenCalledWith('/resources/res-123', {
+        signal: controller.signal,
+      });
+      expect(result).toEqual(fakeResource);
+    });
+  });
+
+  describe('getAvailability', () => {
+    it('calls client with from/to query params and passes AbortSignal', async () => {
+      const fakeAvail = {
+        data: {
+          resourceId: 'res-123',
+          from: '2026-10-05T00:00:00.000Z',
+          to: '2026-10-06T00:00:00.000Z',
+          booked: [{ start: '2026-10-05T04:30:00.000Z', end: '2026-10-05T06:00:00.000Z' }],
+        },
+      };
+      client.mockResolvedValueOnce(fakeAvail);
+
+      const controller = new AbortController();
+      const result = await getAvailability(
+        'res-123',
+        { from: '2026-10-05T00:00:00.000Z', to: '2026-10-06T00:00:00.000Z' },
+        { signal: controller.signal }
+      );
+
+      expect(client).toHaveBeenCalledWith(
+        '/resources/res-123/availability?from=2026-10-05T00%3A00%3A00.000Z&to=2026-10-06T00%3A00%3A00.000Z',
+        { signal: controller.signal }
+      );
+      expect(result).toEqual(fakeAvail);
     });
   });
 });
