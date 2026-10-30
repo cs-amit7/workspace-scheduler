@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as clientModule from './client.js';
+import * as bookingsModule from './bookings.js';
 import { listMyBookings } from './bookings.js';
 
 describe('bookings API', () => {
@@ -41,4 +42,44 @@ describe('bookings API', () => {
       signal: controller.signal,
     });
   });
+
+  it('calls client with POST /bookings for createBooking', async () => {
+    const clientSpy = vi.spyOn(clientModule, 'default').mockResolvedValue({ data: { _id: 'b1' } });
+    const payload = {
+      resourceId: 'res-1',
+      start: '2026-10-05T04:30:00.000Z',
+      end: '2026-10-05T06:00:00.000Z',
+    };
+
+    const res = await bookingsModule.createBooking(payload);
+    expect(clientSpy).toHaveBeenCalledWith('/bookings', {
+      method: 'POST',
+      body: payload,
+      signal: undefined,
+    });
+    expect(res.data._id).toBe('b1');
+  });
+
+  it('calls client with DELETE /bookings/:id for cancelBooking', async () => {
+    const clientSpy = vi.spyOn(clientModule, 'default').mockResolvedValue({
+      data: { _id: 'b1', status: 'cancelled' },
+    });
+    const controller = new AbortController();
+
+    const res = await bookingsModule.cancelBooking('b1', { signal: controller.signal });
+    expect(clientSpy).toHaveBeenCalledWith('/bookings/b1', {
+      method: 'DELETE',
+      signal: controller.signal,
+    });
+    expect(res.data.status).toBe('cancelled');
+  });
+
+  it('default export provides listMyBookings, createBooking, and cancelBooking', () => {
+    expect(bookingsModule.default).toEqual({
+      listMyBookings: bookingsModule.listMyBookings,
+      createBooking: bookingsModule.createBooking,
+      cancelBooking: bookingsModule.cancelBooking,
+    });
+  });
 });
+

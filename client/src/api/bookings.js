@@ -23,9 +23,20 @@ export async function listMyBookings(params = {}, options = {}) {
   });
 }
 
-export default {
-  listMyBookings,
-};
+/**
+ * Cancel a booking by ID.
+ * @param {string} id Booking ID
+ * @param {object} [options]
+ * @param {AbortSignal} [options.signal]
+ * @returns {Promise<{ data: object }>}
+ */
+export async function cancelBooking(id, options = {}) {
+  return client(`/bookings/${id}`, {
+    method: 'DELETE',
+    signal: options?.signal,
+  });
+}
+
 /**
  * Create a booking. Times must be UTC ISO strings on 30-minute boundaries.
  * @param {{ resourceId: string, start: string, end: string }} booking
@@ -38,3 +49,9 @@ export async function createBooking({ resourceId, start, end }, options = {}) {
     signal: options?.signal,
   });
 }
+
+export default {
+  listMyBookings,
+  createBooking,
+  cancelBooking,
+};
