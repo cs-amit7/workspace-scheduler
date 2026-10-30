@@ -103,10 +103,13 @@ export async function listMine(userId, { when = 'upcoming', page = 1, limit = 12
     let sort = { start: -1 };
 
     if (when === 'upcoming') {
+        // Only live bookings: a cancelled booking is history, not "upcoming".
         filter.end = { $gt: now() };
+        filter.status = 'confirmed';
         sort = { start: 1 };
     } else if (when === 'past') {
-        filter.end = { $lte: now() };
+        // History = bookings that have ended, plus anything cancelled.
+        filter.$or = [{ end: { $lte: now() } }, { status: 'cancelled' }];
     }
 
     const [items, total] = await Promise.all([

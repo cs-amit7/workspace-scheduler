@@ -290,6 +290,24 @@ describe('Bookings API', () => {
             expect(res.body.data).toHaveLength(1);
             expect(res.body.data[0].status).toBe('cancelled');
         });
+        it('moves a cancelled future booking from upcoming to past', async () => {
+            const start = slotAt(3, 10);
+            const created = await postBooking(user.token, body(start, plus(start, 60)));
+            await request(app)
+                .delete(`/api/bookings/${created.body.data._id}`)
+                .set(authHeader(user.token));
+
+            const upcoming = await request(app)
+                .get('/api/bookings/me?when=upcoming')
+                .set(authHeader(user.token));
+            expect(upcoming.body.meta.total).toBe(0);
+
+            const past = await request(app)
+                .get('/api/bookings/me?when=past')
+                .set(authHeader(user.token));
+            expect(past.body.meta.total).toBe(1);
+            expect(past.body.data[0].status).toBe('cancelled');
+        });
     });
 
     // ── DELETE /api/bookings/:id ───────────────────────────────────────────────

@@ -86,7 +86,7 @@ Rules: 30-min aligned, 30 min ≤ duration ≤ 4 h, start in the future, ≤ 30 
 - `400 VALIDATION_ERROR`
 
 ### `GET /bookings/me?when=upcoming|past|all&page&limit` — auth
-Returns the caller's bookings with the resource populated (`name`, `type`). Upcoming = `end > now`; sorted ascending (upcoming) or descending (past).
+Upcoming = confirmed bookings with end > now (soonest first). Past = bookings that have ended plus any cancelled booking (newest first). All = everything, newest first.
 
 ### `GET /bookings` — admin
 Query: `resourceId`, `userId`, `from`, `to`, `status`, `page`, `limit`.
