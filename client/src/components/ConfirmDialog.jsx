@@ -41,9 +41,8 @@ export default function ConfirmDialog({
     if (open) {
       prevFocusedRef.current = document.activeElement;
       // Focus the cancel (safe) button initially
-      requestAnimationFrame(() => {
-        cancelButtonRef.current?.focus();
-      });
+      cancelButtonRef.current?.focus();
+
     } else if (prevFocusedRef.current && typeof prevFocusedRef.current.focus === 'function') {
       prevFocusedRef.current.focus();
       prevFocusedRef.current = null;
@@ -53,9 +52,7 @@ export default function ConfirmDialog({
   // When busy goes from true to false while open (e.g. after a failed attempt), refocus cancel button
   useEffect(() => {
     if (open && prevBusyRef.current === true && !busy) {
-      requestAnimationFrame(() => {
-        cancelButtonRef.current?.focus();
-      });
+      cancelButtonRef.current?.focus();
     }
     prevBusyRef.current = busy;
   }, [open, busy]);

@@ -110,7 +110,7 @@ describe('ConfirmDialog component', () => {
     const cancelButton = screen.getByRole('button', { name: 'Cancel Action' });
     const confirmButton = screen.getByRole('button', { name: 'Confirm Action' });
 
-    cancelButton.focus();
+    // The dialog itself puts focus on the safe action when it opens.
     expect(document.activeElement).toBe(cancelButton);
 
     // Tab moves to confirm button
