@@ -95,8 +95,8 @@ Before coding, show a short plan. After coding, list files changed and how to ve
 **Prompt:** `CONTEXT: docs/DESIGN.md §4 Resource detail, §8, §10. TASK: build booking flow. CONSTRAINTS: send UTC ISO only. DONE WHEN: booking succeeds; a second tab booking the same slot shows the conflict message.`
 
 ### Phase 10 — My Bookings & status badges
-- [ ] Upcoming/Past tabs, `StatusBadge`, `useNow()`, `ConfirmDialog` cancel flow
-- [ ] `utils/status.js` pure function + unit tests (boundary: now == start, now == end)
+- [x] Upcoming/Past tabs, `StatusBadge`, `useNow()`, `ConfirmDialog` cancel flow
+- [x] `utils/status.js` pure function + unit tests (boundary: now == start, now == end)
 
 **Prompt:** `CONTEXT: docs/DESIGN.md §5. TASK: implement. DONE WHEN: vitest passes for status.js boundaries; cancelling updates the list without reload.`
 
