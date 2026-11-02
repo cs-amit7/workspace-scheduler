@@ -85,9 +85,72 @@ export async function getAvailability(id, window = {}, options = {}) {
   });
 }
 
+/**
+ * Create a new resource.
+ * @param {object} body
+ * @param {object} [options={}]
+ * @param {AbortSignal} [options.signal]
+ * @returns {Promise<{ data: object }>}
+ */
+export async function createResource(body = {}, options = {}) {
+  const signal = options?.signal || body?.signal;
+  let finalBody = body;
+  if (body && typeof body === 'object' && 'signal' in body) {
+    const next = { ...body };
+    delete next.signal;
+    finalBody = next;
+  }
+  return client('/resources', {
+    method: 'POST',
+    body: finalBody,
+    signal,
+  });
+}
+
+/**
+ * Partially update a resource by ID.
+ * @param {string} id
+ * @param {object} body
+ * @param {object} [options={}]
+ * @param {AbortSignal} [options.signal]
+ * @returns {Promise<{ data: object }>}
+ */
+export async function updateResource(id, body = {}, options = {}) {
+  const signal = options?.signal || body?.signal;
+  let finalBody = body;
+  if (body && typeof body === 'object' && 'signal' in body) {
+    const next = { ...body };
+    delete next.signal;
+    finalBody = next;
+  }
+  return client(`/resources/${id}`, {
+    method: 'PATCH',
+    body: finalBody,
+    signal,
+  });
+}
+
+/**
+ * Soft-disable a resource by ID.
+ * @param {string} id
+ * @param {object} [options={}]
+ * @param {AbortSignal} [options.signal]
+ * @returns {Promise<{ data: object }>}
+ */
+export async function disableResource(id, options = {}) {
+  return client(`/resources/${id}`, {
+    method: 'DELETE',
+    signal: options?.signal,
+  });
+}
+
 export default {
   listResources,
   buildResourceQuery,
   getResource,
   getAvailability,
+  createResource,
+  updateResource,
+  disableResource,
 };
+

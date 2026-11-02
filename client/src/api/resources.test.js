@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import client from './client.js';
-import { listResources, buildResourceQuery, getResource, getAvailability } from './resources.js';
+import { listResources, buildResourceQuery, getResource, getAvailability, createResource, updateResource, disableResource } from './resources.js';
 
 vi.mock('./client.js', () => ({
   default: vi.fn(),
@@ -108,6 +108,58 @@ describe('resources API', () => {
         { signal: controller.signal }
       );
       expect(result).toEqual(fakeAvail);
+    });
+  });
+
+  describe('createResource', () => {
+    it('calls client with POST /resources, body, and signal', async () => {
+      const payload = { name: 'Apollo Room', type: 'room', capacity: 10, location: 'Floor 1' };
+      const fakeResponse = { data: { _id: 'res-new', ...payload } };
+      client.mockResolvedValueOnce(fakeResponse);
+
+      const controller = new AbortController();
+      const result = await createResource(payload, { signal: controller.signal });
+
+      expect(client).toHaveBeenCalledWith('/resources', {
+        method: 'POST',
+        body: payload,
+        signal: controller.signal,
+      });
+      expect(result).toEqual(fakeResponse);
+    });
+  });
+
+  describe('updateResource', () => {
+    it('calls client with PATCH /resources/:id, body, and signal', async () => {
+      const payload = { capacity: 12 };
+      const fakeResponse = { data: { _id: 'res-1', capacity: 12 } };
+      client.mockResolvedValueOnce(fakeResponse);
+
+      const controller = new AbortController();
+      const result = await updateResource('res-1', payload, { signal: controller.signal });
+
+      expect(client).toHaveBeenCalledWith('/resources/res-1', {
+        method: 'PATCH',
+        body: payload,
+        signal: controller.signal,
+      });
+      expect(result).toEqual(fakeResponse);
+    });
+  });
+
+  describe('disableResource', () => {
+    it('calls client with DELETE /resources/:id and signal', async () => {
+      const fakeResponse = { data: { _id: 'res-1', isActive: false } };
+      client.mockResolvedValueOnce(fakeResponse);
+
+      const controller = new AbortController();
+      const result = await disableResource('res-1', { signal: controller.signal });
+
+      expect(client).toHaveBeenCalledWith('/resources/res-1', {
+        method: 'DELETE',
+        signal: controller.signal,
+      });
+      expect(result).toEqual(fakeResponse);
     });
   });
 });
