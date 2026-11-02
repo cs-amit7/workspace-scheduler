@@ -101,8 +101,8 @@ Before coding, show a short plan. After coding, list files changed and how to ve
 **Prompt:** `CONTEXT: docs/DESIGN.md §5. TASK: implement. DONE WHEN: vitest passes for status.js boundaries; cancelling updates the list without reload.`
 
 ### Phase 11 — Admin
-- [ ] Resource table, create/edit modal (`ResourceForm`), enable/disable toggle, admin bookings view
-- [ ] Non-admin redirected
+- [x] Resource table, create/edit modal (`ResourceForm`), enable/disable toggle, admin bookings view
+- [x] Non-admin redirected
 
 **Prompt:** `CONTEXT: docs/API.md Resources(admin). TASK: build /admin. DONE WHEN: demo admin (local) can create, edit, disable; demo user gets redirected.`
 

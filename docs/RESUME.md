@@ -10,7 +10,7 @@
 | Concurrency stability | 10 / 10 consecutive runs passed | the 10-run loop |
 | Total automated tests | 169 across 12 suites (server only so far) | CI log |
 | Backend coverage | services 94.6% statements, 97.6% lines; utils 95.8% / 95.7%; whole server 86.4% / 88.2% | coverage report |
-| Postman assertions passing | [ ] (pending clean Newman run; 47 assertions in the collection) | Newman summary |
+| Postman assertions passing | 47 / 47 across 27 requests (Newman, local run) | Newman summary |
 | Lighthouse (Perf / A11y / Best Practices / SEO) | [ ] pending | Chrome Lighthouse on live URL |
 | Live URL | [ ] pending | Vercel |
 | GitHub repo | https://github.com/cs-amit7/workspace-scheduler | |
