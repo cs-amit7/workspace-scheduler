@@ -2,6 +2,7 @@ import { useState, useMemo, useRef } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useResource } from '../hooks/useResource.js';
 import { useAvailability } from '../hooks/useAvailability.js';
+import useDocumentTitle from '../hooks/useDocumentTitle.js';
 import { createBooking } from '../api/bookings.js';
 import { localDayWindowUtc, buildDaySlots, formatLocalRange } from '../utils/time.js';
 import DatePicker from '../components/DatePicker.jsx';
@@ -10,6 +11,7 @@ import AmenityBadge from '../components/AmenityBadge.jsx';
 import Skeleton from '../components/Skeleton.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import ErrorState from '../components/ErrorState.jsx';
+import Container from '../components/Container.jsx';
 
 const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -44,6 +46,14 @@ export default function ResourceDetail() {
     error: resourceError,
     reload: reloadResource,
   } = useResource(id);
+
+  useDocumentTitle(
+    resource?.name
+      ? `${resource.name} | Workspace`
+      : resourceError?.status === 404
+        ? 'Page not found | Workspace'
+        : 'Workspace'
+  );
 
   // Local day as a UTC window [00:00, next 00:00)
   const dayWindow = useMemo(() => localDayWindowUtc(selectedDate), [selectedDate]);
@@ -147,7 +157,7 @@ export default function ResourceDetail() {
 
   if (resourceLoading) {
     return (
-      <div data-testid="resource-detail-loading" className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <Container data-testid="resource-detail-loading" className="py-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
             <div className="flex items-start justify-between gap-4">
@@ -166,14 +176,14 @@ export default function ResourceDetail() {
             <Skeleton className="h-64 w-full rounded-lg" />
           </div>
         </div>
-      </div>
+      </Container>
     );
   }
 
   if (resourceError) {
     if (resourceError.status === 404) {
       return (
-        <div className="mx-auto max-w-2xl px-4 py-16">
+        <Container className="py-16">
           <EmptyState
             title="Resource not found"
             message="The workspace or room you are looking for does not exist or has been removed."
@@ -186,19 +196,19 @@ export default function ResourceDetail() {
               </Link>
             }
           />
-        </div>
+        </Container>
       );
     }
 
     return (
-      <div className="mx-auto max-w-2xl px-4 py-16">
+      <Container className="py-16">
         <ErrorState
           title="Failed to load resource"
           message={resourceError.message || 'An unexpected error occurred.'}
           retryText="Retry"
           onRetry={reloadResource}
         />
-      </div>
+      </Container>
     );
   }
 
@@ -219,7 +229,7 @@ export default function ResourceDetail() {
   const leftColorClass = isRoom ? 'border-l-type-room' : 'border-l-type-desk';
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <Container className="py-8">
       {/* Breadcrumb */}
       <nav className="mb-6 flex items-center gap-2 text-xs font-mono text-muted" aria-label="Breadcrumb">
         <Link to="/" className="hover:text-brand-text transition-colors">
@@ -391,6 +401,6 @@ export default function ResourceDetail() {
           </div>
         </div>
       </div>
-    </div>
+    </Container>
   );
 }

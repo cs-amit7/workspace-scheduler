@@ -1,5 +1,6 @@
 import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import Container from './Container.jsx';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -12,9 +13,9 @@ export default function Navbar() {
   return (
     <nav
       aria-label="Main Navigation"
-      className="bg-panel border-b border-line px-4 sm:px-6 py-3"
+      className="bg-panel border-b border-line py-3"
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+      <Container className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-6">
           <Link
             to="/"
@@ -43,7 +44,9 @@ export default function Navbar() {
               {user.avatar ? (
                 <img
                   src={user.avatar}
-                  alt={user.name || 'User avatar'}
+                  alt={user.name ? `${user.name}'s avatar` : 'User avatar'}
+                  width={32}
+                  height={32}
                   className="h-8 w-8 rounded-full border border-line object-cover"
                 />
               ) : null}
@@ -62,7 +65,7 @@ export default function Navbar() {
             Logout
           </button>
         </div>
-      </div>
+      </Container>
     </nav>
   );
 }

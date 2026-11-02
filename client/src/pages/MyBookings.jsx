@@ -2,12 +2,14 @@ import { useState, useMemo, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import useMyBookings from '../hooks/useMyBookings.js';
 import useNow from '../hooks/useNow.js';
+import useDocumentTitle from '../hooks/useDocumentTitle.js';
 import BookingCard from '../components/BookingCard.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Pagination from '../components/Pagination.jsx';
 import Skeleton from '../components/Skeleton.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import ErrorState from '../components/ErrorState.jsx';
+import Container from '../components/Container.jsx';
 import { cancelBooking } from '../api/bookings.js';
 import { formatLongDate } from '../utils/format.js';
 import { formatLocalRange } from '../utils/time.js';
@@ -24,6 +26,8 @@ import { formatLocalRange } from '../utils/time.js';
  * - Accessible cancellation modal with double-submit guard and stale list recovery
  */
 export default function MyBookings() {
+  useDocumentTitle('My Bookings | Workspace');
+
   const [searchParams, setSearchParams] = useSearchParams();
   const now = useNow();
 
@@ -158,7 +162,7 @@ export default function MyBookings() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <Container className="py-8">
       <header className="mb-6">
         <h1 className="text-2xl font-bold font-sans text-ink">My Bookings</h1>
         <p className="mt-1 text-sm text-muted">
@@ -364,6 +368,6 @@ export default function MyBookings() {
         onConfirm={handleConfirmCancel}
         onCancel={handleCloseCancel}
       />
-    </div>
+    </Container>
   );
 }

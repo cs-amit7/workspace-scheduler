@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import useResources from '../hooks/useResources.js';
+import useDocumentTitle from '../hooks/useDocumentTitle.js';
 import ResourceCard from '../components/ResourceCard.jsx';
 import Pagination from '../components/Pagination.jsx';
 import Skeleton from '../components/Skeleton.jsx';
@@ -8,6 +9,7 @@ import EmptyState from '../components/EmptyState.jsx';
 import ErrorState from '../components/ErrorState.jsx';
 import StatStrip from '../components/StatStrip.jsx';
 import FilterBar from '../components/FilterBar.jsx';
+import Container from '../components/Container.jsx';
 import { localToUtcIso } from '../utils/time.js';
 
 /**
@@ -18,6 +20,8 @@ import { localToUtcIso } from '../utils/time.js';
  * - Resources grid with pagination, loading skeletons, and empty/error states
  */
 export default function Dashboard() {
+  useDocumentTitle('Dashboard | Workspace');
+
   const [searchParams, setSearchParams] = useSearchParams();
 
   const pageParam = parseInt(searchParams.get('page'), 10);
@@ -79,7 +83,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <Container className="py-8">
       <h1 className="sr-only">Dashboard</h1>
 
       {/* Slim hero */}
@@ -183,6 +187,6 @@ export default function Dashboard() {
           </div>
         </>
       )}
-    </div>
+    </Container>
   );
 }

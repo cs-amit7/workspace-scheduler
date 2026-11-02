@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import useResources from '../hooks/useResources.js';
 import useAllBookings from '../hooks/useAllBookings.js';
 import useNow from '../hooks/useNow.js';
+import useDocumentTitle from '../hooks/useDocumentTitle.js';
 import { listResources, disableResource, updateResource } from '../api/resources.js';
 import { cancelBooking } from '../api/bookings.js';
 import ResourceForm from '../components/ResourceForm.jsx';
@@ -13,11 +14,14 @@ import EmptyState from '../components/EmptyState.jsx';
 import ErrorState from '../components/ErrorState.jsx';
 import AmenityBadge from '../components/AmenityBadge.jsx';
 import StatusBadge from '../components/StatusBadge.jsx';
+import Container from '../components/Container.jsx';
 import { getBookingStatus, isCancellable } from '../utils/status.js';
 import { formatLocalRange, localDayWindowUtc } from '../utils/time.js';
 import { formatLongDate } from '../utils/format.js';
 
 export default function Admin() {
+  useDocumentTitle('Admin | Workspace');
+
   const [searchParams, setSearchParams] = useSearchParams();
   const now = useNow();
 
@@ -364,7 +368,7 @@ export default function Admin() {
     : 1;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <Container className="py-8">
       {/* Title & Toolbar */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -980,6 +984,6 @@ export default function Admin() {
           }
         }}
       />
-    </div>
+    </Container>
   );
 }

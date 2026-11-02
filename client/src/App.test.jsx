@@ -1,8 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import App, { AppRoutes } from './App.jsx';
+import App, { AppRoutes, AppLayout } from './App.jsx';
 import * as authApi from './api/auth.js';
+import client from './api/client.js';
 import { AuthProvider } from './context/AuthContext.jsx';
 
 describe('App Routing', () => {
@@ -52,6 +53,68 @@ describe('App Routing', () => {
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
       expect(screen.getByText('◆ WORKSPACE')).toBeInTheDocument();
+    });
+  });
+
+  it('renders skip link as the very first focusable element in AppLayout and targets #main-content', () => {
+    vi.spyOn(authApi, 'getMe').mockResolvedValueOnce({
+      data: { _id: 'u1', name: 'Alice Smith', email: 'alice@example.com', role: 'user' },
+    });
+
+    const { container } = render(
+      <AuthProvider>
+        <MemoryRouter>
+          <AppLayout />
+        </MemoryRouter>
+      </AuthProvider>
+    );
+
+    const skipLink = screen.getByRole('link', { name: 'Skip to main content' });
+    expect(skipLink).toBeInTheDocument();
+    expect(skipLink).toHaveAttribute('href', '#main-content');
+
+    const main = container.querySelector('#main-content');
+    expect(main).toBeInTheDocument();
+    expect(main).toHaveAttribute('tabIndex', '-1');
+
+    // The skip link must be the very first focusable element in the DOM tree
+    const focusableElements = container.querySelectorAll(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    expect(focusableElements.length).toBeGreaterThan(0);
+    expect(focusableElements[0]).toBe(skipLink);
+  });
+
+  it('redirects to /login with session-expired status when a 401 triggers unauthorized handler', async () => {
+    vi.spyOn(authApi, 'getMe').mockResolvedValueOnce({
+      data: { _id: 'u1', name: 'Alice Smith', email: 'alice@example.com', role: 'user' },
+    });
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
+    });
+
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      statusText: 'Unauthorized',
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        error: { code: 'UNAUTHENTICATED', message: 'Session expired' },
+      }),
+    });
+
+    try {
+      await client('/bookings');
+    } catch {
+      // expected error from client
+    }
+
+    await waitFor(() => {
+      const notice = screen.getByRole('status');
+      expect(notice).toHaveTextContent('Your session expired. Please sign in again.');
     });
   });
 });

@@ -9,9 +9,12 @@ import { useId, useEffect, useRef } from 'react';
  * @param {React.ReactNode} [props.title] Modal title text or node
  * @param {string} [props.titleId] Custom ID for title element
  * @param {string} [props.ariaLabelledBy] Override ID for aria-labelledby
+ * @param {string} [props.ariaDescribedBy] Optional ID for aria-describedby
  * @param {boolean} [props.busy=false] Whether in-flight action prevents closing
  * @param {React.RefObject} [props.initialFocusRef] Specific element to focus initially
  * @param {string} [props.className] Additional CSS classes for dialog container
+ * @param {string} [props.backdropTestId='modal-backdrop'] Test ID for the backdrop overlay
+ * @param {boolean} [props.showCloseButton=true] Whether to show the top-right close button
  * @param {React.ReactNode} props.children Modal contents
  */
 export default function Modal({
@@ -20,9 +23,12 @@ export default function Modal({
   title,
   titleId: customTitleId,
   ariaLabelledBy,
+  ariaDescribedBy,
   busy = false,
   initialFocusRef,
   className = 'max-w-lg',
+  backdropTestId = 'modal-backdrop',
+  showCloseButton = true,
   children,
 }) {
   const generatedId = useId();
@@ -51,6 +57,13 @@ export default function Modal({
       prevFocusedRef.current.focus();
       prevFocusedRef.current = null;
     }
+
+    return () => {
+      if (prevFocusedRef.current && typeof prevFocusedRef.current.focus === 'function') {
+        prevFocusedRef.current.focus();
+        prevFocusedRef.current = null;
+      }
+    };
   }, [open, initialFocusRef]);
 
   // Keyboard trap: Escape to close unless busy, Tab and Shift+Tab wrapped
@@ -119,31 +132,40 @@ export default function Modal({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-bg/80 p-4 backdrop-blur-sm"
       onClick={handleBackdropClick}
-      data-testid="modal-backdrop"
+      data-testid={backdropTestId}
     >
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}
+        aria-describedby={ariaDescribedBy}
         className={`relative w-full rounded-lg border border-line bg-panel p-6 shadow-xl ${className}`}
       >
         {title && (
-          <div className="mb-4 flex items-center justify-between border-b border-line pb-3">
+          <div
+            className={
+              showCloseButton
+                ? 'mb-4 flex items-center justify-between border-b border-line pb-3'
+                : ''
+            }
+          >
             <h2 id={titleId} className="text-lg font-semibold text-ink">
               {title}
             </h2>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={onClose}
-              aria-label="Close modal"
-              className="rounded p-1 text-muted transition-colors hover:bg-panel-2 hover:text-ink focus:outline-none focus:ring-2 focus:ring-brand-text disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            {showCloseButton && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={onClose}
+                aria-label="Close modal"
+                className="rounded p-1 text-muted transition-colors hover:bg-panel-2 hover:text-ink focus:outline-none focus:ring-2 focus:ring-brand-text disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
         )}
         {children}

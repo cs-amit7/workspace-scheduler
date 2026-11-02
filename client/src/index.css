@@ -26,3 +26,16 @@
     theme('colors.line') 12px
   );
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse,
+  .animate-ping {
+    animation: none !important;
+  }
+
+  *,
+  ::before,
+  ::after {
+    transition: none !important;
+  }
+}

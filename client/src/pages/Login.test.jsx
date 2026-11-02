@@ -84,4 +84,38 @@ describe('Login Page', () => {
 
     expect(screen.getByTestId('location')).toHaveTextContent('/');
   });
+
+  it('renders session-expired notice with role="status" when expired state is provided', () => {
+    vi.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
+      user: null,
+      loginDemo: vi.fn(),
+    });
+
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/login', state: { expired: true } }]}>
+        <Login />
+      </MemoryRouter>
+    );
+
+    const statusNotice = screen.getByRole('status');
+    expect(statusNotice).toBeInTheDocument();
+    expect(statusNotice).toHaveTextContent('Your session expired. Please sign in again.');
+  });
+
+  it('renders session-expired notice with role="status" when ?expired=true is in search params', () => {
+    vi.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
+      user: null,
+      loginDemo: vi.fn(),
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/login?expired=true']}>
+        <Login />
+      </MemoryRouter>
+    );
+
+    const statusNotice = screen.getByRole('status');
+    expect(statusNotice).toBeInTheDocument();
+    expect(statusNotice).toHaveTextContent('Your session expired. Please sign in again.');
+  });
 });

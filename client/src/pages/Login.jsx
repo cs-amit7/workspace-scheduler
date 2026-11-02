@@ -1,15 +1,29 @@
 import { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import useDocumentTitle from '../hooks/useDocumentTitle.js';
+import Container from '../components/Container.jsx';
 import { GOOGLE_LOGIN_URL } from '../api/auth.js';
 
 export default function Login() {
+  useDocumentTitle('Login | Workspace');
+
   const { user, loginDemo } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
   const [loadingDemo, setLoadingDemo] = useState(false);
   const [error, setError] = useState(null);
+
+  const searchParams = new URLSearchParams(location.search);
+  const sessionExpired =
+    location.state?.expired ||
+    location.state?.notice === 'Your session expired. Please sign in again.' ||
+    searchParams.get('expired') === 'true';
+
+  const expiredNotice = sessionExpired
+    ? 'Your session expired. Please sign in again.'
+    : location.state?.notice;
 
   const destination = location.state?.from || '/';
 
@@ -31,32 +45,42 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-ink flex flex-col justify-center items-center px-4 py-12">
-      <div className="w-full max-w-md space-y-6">
-        {/* Slim Hero */}
-        <div className="bg-brand-gradient rounded-xl p-8 text-center shadow-lg text-white">
-          <div className="font-mono text-xs uppercase tracking-widest text-white/80 font-bold mb-2">
-            ◆ WORKSPACE
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Find your spot. Book rooms and desks in seconds.
-          </h1>
-        </div>
-
-        {/* Card for actions */}
-        <div className="rounded-xl border border-line bg-panel p-6 sm:p-8 space-y-4">
-          <h2 className="text-lg font-semibold text-ink text-center">
-            Sign in to continue
-          </h2>
-
-          {error && (
-            <div
-              role="alert"
-              className="rounded-lg border border-danger/40 bg-danger/10 p-3 text-sm text-danger text-center"
-            >
-              {error}
+    <div className="min-h-screen bg-bg text-ink flex flex-col justify-center items-center">
+      <Container className="w-full flex flex-col items-center py-12">
+        <div className="w-full max-w-md space-y-6">
+          {/* Slim Hero */}
+          <div className="bg-brand-gradient rounded-xl p-8 text-center shadow-lg text-white">
+            <div className="font-mono text-xs uppercase tracking-widest text-white/80 font-bold mb-2">
+              ◆ WORKSPACE
             </div>
-          )}
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+              Find your spot. Book rooms and desks in seconds.
+            </h1>
+          </div>
+
+          {/* Card for actions */}
+          <div className="rounded-xl border border-line bg-panel p-6 sm:p-8 space-y-4">
+            <h2 className="text-lg font-semibold text-ink text-center">
+              Sign in to continue
+            </h2>
+
+            {expiredNotice && (
+              <div
+                role="status"
+                className="rounded-lg border border-amber/40 bg-amber/10 p-3 text-sm text-amber text-center"
+              >
+                {expiredNotice}
+              </div>
+            )}
+
+            {error && (
+              <div
+                role="alert"
+                className="rounded-lg border border-danger/40 bg-danger/10 p-3 text-sm text-danger text-center"
+              >
+                {error}
+              </div>
+            )}
 
           <div className="space-y-3 pt-2">
             <a
@@ -95,6 +119,7 @@ export default function Login() {
           </div>
         </div>
       </div>
+      </Container>
     </div>
   );
 }

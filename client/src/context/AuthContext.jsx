@@ -75,12 +75,18 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
+  const clearAuth = useCallback(() => {
+    setUser(null);
+  }, []);
+
   const value = {
     user,
     loading,
     loginDemo,
     logout,
     refresh,
+    setUser,
+    clearAuth,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
