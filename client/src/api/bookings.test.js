@@ -74,9 +74,29 @@ describe('bookings API', () => {
     expect(res.data.status).toBe('cancelled');
   });
 
-  it('default export provides listMyBookings, createBooking, and cancelBooking', () => {
+  it('calls client with correct query string for listAllBookings', async () => {
+    const clientSpy = vi.spyOn(clientModule, 'default').mockResolvedValue({
+      data: [{ _id: 'b1' }],
+      meta: { page: 1, limit: 15, total: 1 },
+    });
+    const controller = new AbortController();
+
+    const res = await bookingsModule.listAllBookings(
+      { resourceId: 'res-1', status: 'confirmed', page: 1, limit: 15 },
+      { signal: controller.signal }
+    );
+
+    expect(clientSpy).toHaveBeenCalledWith(
+      '/bookings?resourceId=res-1&status=confirmed&page=1&limit=15',
+      { signal: controller.signal }
+    );
+    expect(res.meta.total).toBe(1);
+  });
+
+  it('default export provides listMyBookings, listAllBookings, createBooking, and cancelBooking', () => {
     expect(bookingsModule.default).toEqual({
       listMyBookings: bookingsModule.listMyBookings,
+      listAllBookings: bookingsModule.listAllBookings,
       createBooking: bookingsModule.createBooking,
       cancelBooking: bookingsModule.cancelBooking,
     });

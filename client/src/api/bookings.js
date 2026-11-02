@@ -50,8 +50,32 @@ export async function createBooking({ resourceId, start, end }, options = {}) {
   });
 }
 
+/**
+ * List all bookings across the system (admin only).
+ *
+ * @param {object} [params={}] Query parameters (resourceId, userId, status, from, to, page, limit)
+ * @param {object} [options={}]
+ * @param {AbortSignal} [options.signal]
+ * @returns {Promise<{ data: Array, meta?: object }>}
+ */
+export async function listAllBookings(params = {}, options = {}) {
+  const searchParams = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '') {
+      searchParams.append(key, String(value));
+    }
+  }
+
+  const queryString = searchParams.toString();
+  return client(`/bookings${queryString ? `?${queryString}` : ''}`, {
+    signal: options?.signal,
+  });
+}
+
 export default {
   listMyBookings,
+  listAllBookings,
   createBooking,
   cancelBooking,
 };
