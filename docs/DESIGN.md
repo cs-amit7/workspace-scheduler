@@ -102,7 +102,9 @@ Dark is the **default and only theme in v1**. Hex values are this project's own 
 | `danger` | `#ff5c5c` | Errors, conflicts |
 | `type-room` / `type-desk` | `#ff6a4d` / `#4aa3ff` | Left colour bar on cards |
 
-**Gradient:** `linear-gradient(135deg, #d93a22 0%, #f08a24 100%)` — hero banner and primary CTA only.
+**Gradient:** `linear-gradient(135deg, #d93a22 0%, #f08a24 100%)` — hero banner and primary CTA only; banners are retired.
+
+md
 
 **Type:** Inter for UI; **JetBrains Mono** for times, IDs, counters and amenity chips (the "developer" feel). System fallbacks required.
 
@@ -141,3 +143,35 @@ Semantic landmarks; labelled inputs; slot grid is a `role="grid"` with arrow-key
 
 ## 10. Time display
 UI shows the user's local time with the timezone label (e.g. "IST"); API payloads are always UTC ISO strings. Date-picker converts the chosen local day into a `[from, to)` UTC window for availability queries.
+
+## 12. Backdrop and glass (ADR-018)
+Dark developer look inspired by coding-practice sites, not a copy. One `Backdrop` layer mounted once at the app root; it is decoration only (aria-hidden, pointer-events none, no focusable content).
+
+### Layers (bottom to top)
+1. Base: `bg` token.
+2. Noise: inline SVG texture at about 4% opacity (no image files).
+3. Streaks: thin vertical gradient lines with a fade-out mask; static.
+4. Glow: radial gradient from the brand colour (cheaper than CSS blur).
+5. Tiles: small translucent rounded squares with workspace icons, drifting slowly.
+
+### Variants
+| | `hero` (Login) | `app` (everything else) |
+|---|---|---|
+| Glow | centred behind the headline, about 22% | top centre, about 10% |
+| Streaks | 7, about 8% | 4, about 4% |
+| Tiles | 10, spread across the page | 6, outer gutters only, about 35%, shown from 1280 px |
+| Below 768 px | no tiles, no animation, 3 streaks | same |
+
+### Tiles
+Inline SVG icons authored in-house (no icon dependency): wifi, monitor, projector, whiteboard, clock, calendar-check, plug, desk. Plus two or three mono time chips such as `10:30`. Float animation: translateY about 8 px, 10-14 s, alternate, per-tile delay via CSS variable. Only `transform` and `opacity` animate. Tiles use a translucent fill and border but no backdrop-filter.
+
+### Glass
+`.glass` utility: translucent panel fill, `backdrop-filter: blur(14px) saturate(120%)`, 1 px line border, faint inner top highlight, solid-colour fallback via `@supports`. Used ONLY on: navbar, login card, stat strip, booking panel, modal and dialog panels. Resource cards, tables, forms, the slot grid and admin screens stay on solid `panel` surfaces.
+
+### Rules
+- All colour values for the backdrop live in `index.css` as CSS variables; components use classes only.
+- Text on glass uses `ink` or `muted`; contrast at least 4.5:1, checked against the brightest part of the glow.
+- `prefers-reduced-motion` disables the float animation.
+- No gradient text, emoji, neon, or three identical icon-and-blurb cards. One accent colour, used for the primary action and the active state.
+- Mono display type only for the login headline and for times and numbers.
+- Budget: no image files, about 3 KB of added JS or less, at most 4 backdrop-filter surfaces visible at once, no layout shift, Lighthouse performance within 3 points of the baseline.
