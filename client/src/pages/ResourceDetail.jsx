@@ -325,7 +325,7 @@ export default function ResourceDetail() {
 
         {/* Right column: booking panel */}
         <div>
-          <div className="sticky top-6 rounded-lg border border-line bg-panel p-6 shadow-sm">
+          <div className="glass sticky top-6 rounded-lg p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-ink font-sans">Book this {type}</h2>
             <p className="mt-1 text-xs text-muted">Select slots on the grid to create a booking.</p>
 

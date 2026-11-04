@@ -24,9 +24,18 @@ describe('Login Page', () => {
       </MemoryRouter>
     );
 
-    expect(
-      screen.getByText('Find your spot. Book rooms and desks in seconds.')
-    ).toBeInTheDocument();
+    const headline = screen.getByText('Book a room by the half hour.');
+    expect(headline).toBeInTheDocument();
+    expect(headline).toHaveClass('font-mono');
+
+    const subline = screen.getByText(
+      'See what is free, pick a slot, done. Double bookings cannot happen.'
+    );
+    expect(subline).toBeInTheDocument();
+    expect(subline).toHaveClass('font-sans');
+
+    expect(document.querySelector('.bg-brand-gradient')).not.toBeInTheDocument();
+    expect(screen.getByText('Sign in to continue').closest('.glass')).toBeInTheDocument();
 
     const googleBtn = screen.getByRole('link', { name: /Sign in with Google/i });
     expect(googleBtn).toBeInTheDocument();

@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Outlet, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import AdminRoute from './components/AdminRoute.jsx';
 import Navbar from './components/Navbar.jsx';
+import Backdrop from './components/Backdrop.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { setUnauthorizedHandler } from './api/client.js';
 import Login from './pages/Login.jsx';
@@ -40,7 +41,7 @@ export function SessionExpiryHandler() {
 
 export function AppLayout() {
   return (
-    <div className="min-h-screen bg-bg text-ink flex flex-col">
+    <div className="min-h-screen text-ink flex flex-col">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-brand focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-brand-text"
@@ -58,8 +59,12 @@ export function AppLayout() {
 }
 
 export function AppRoutes() {
+  const location = useLocation();
+  const backdropVariant = location.pathname === '/login' ? 'hero' : 'app';
+
   return (
     <ErrorBoundary>
+      <Backdrop variant={backdropVariant} />
       <SessionExpiryHandler />
       <Routes>
         <Route path="/login" element={<Login />} />

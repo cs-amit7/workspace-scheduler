@@ -6,7 +6,7 @@ export default function NotFound() {
   useDocumentTitle('Page not found | Workspace');
 
   return (
-    <div className="min-h-screen bg-bg text-ink flex flex-col justify-center items-center">
+    <div className="min-h-screen text-ink flex flex-col justify-center items-center">
       <Container className="py-12 flex flex-col items-center text-center">
         <div className="font-mono text-5xl font-extrabold text-brand-text mb-4">
           404

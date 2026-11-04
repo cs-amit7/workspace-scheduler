@@ -59,7 +59,7 @@ export default function ConfirmDialog({
       initialFocusRef={cancelButtonRef}
       backdropTestId="dialog-backdrop"
       showCloseButton={false}
-      className="max-w-md"
+      className="glass max-w-md"
     >
       {message && (
         <div id={messageId} className="mt-2 text-sm text-muted">

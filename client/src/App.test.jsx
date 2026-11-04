@@ -35,7 +35,7 @@ describe('App Routing', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText('Find your spot. Book rooms and desks in seconds.')
+        screen.getByText('Book a room by the half hour.')
       ).toBeInTheDocument();
       expect(
         screen.getByRole('link', { name: /Sign in with Google/i })
@@ -51,7 +51,7 @@ describe('App Routing', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Workspaces' })).toBeInTheDocument();
       expect(screen.getByText('◆ WORKSPACE')).toBeInTheDocument();
     });
   });
@@ -93,7 +93,7 @@ describe('App Routing', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Workspaces' })).toBeInTheDocument();
     });
 
     global.fetch = vi.fn().mockResolvedValueOnce({
@@ -116,5 +116,45 @@ describe('App Routing', () => {
       const notice = screen.getByRole('status');
       expect(notice).toHaveTextContent('Your session expired. Please sign in again.');
     });
+  });
+
+  it('renders Backdrop with hero variant on /login route', async () => {
+    vi.spyOn(authApi, 'getMe').mockResolvedValueOnce({ data: null });
+
+    render(
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/login']}>
+          <AppRoutes />
+        </MemoryRouter>
+      </AuthProvider>
+    );
+
+    await waitFor(() => {
+      const glow = screen.getByTestId('backdrop-glow');
+      expect(glow).toHaveClass('backdrop-glow-hero');
+    });
+    const tiles = screen.getAllByTestId('backdrop-tile');
+    expect(tiles).toHaveLength(10);
+  });
+
+  it('renders Backdrop with app variant on non-login routes', async () => {
+    vi.spyOn(authApi, 'getMe').mockResolvedValueOnce({
+      data: { _id: 'u1', name: 'Alice Smith', email: 'alice@example.com', role: 'user' },
+    });
+
+    render(
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/']}>
+          <AppRoutes />
+        </MemoryRouter>
+      </AuthProvider>
+    );
+
+    await waitFor(() => {
+      const glow = screen.getByTestId('backdrop-glow');
+      expect(glow).toHaveClass('backdrop-glow-app');
+    });
+    const tiles = screen.getAllByTestId('backdrop-tile');
+    expect(tiles).toHaveLength(6);
   });
 });
