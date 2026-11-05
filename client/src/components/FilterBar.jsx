@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AMENITIES } from '../utils/amenities.js';
+import AmenityIcon from './amenityIcons.jsx';
 
 /**
  * FilterBar component managing dashboard search and filtering controls.
@@ -298,6 +299,7 @@ export default function FilterBar({ onClear }) {
                   onChange={(e) => handleAmenityToggle(amenity, e.target.checked)}
                   className="h-4 w-4 rounded border-line bg-panel-2 text-brand focus:ring-2 focus:ring-brand-text"
                 />
+                <AmenityIcon name={amenity} className="w-3.5 h-3.5 text-muted shrink-0" />
                 <span>{amenity}</span>
               </label>
             );

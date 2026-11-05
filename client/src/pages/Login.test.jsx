@@ -36,7 +36,7 @@ describe('Login Page', () => {
     expect(subline).toHaveClass('font-sans');
 
     const wordmark = screen.getByText(/WORKSPACE/i);
-    expect(wordmark.closest('div')).toHaveClass('font-mono', 'text-3xl', 'font-bold');
+    expect(wordmark.closest('div')).toHaveClass('font-mono', 'text-2xl', 'sm:text-3xl', 'font-bold');
 
     expect(document.querySelector('.bg-brand-gradient')).not.toBeInTheDocument();
     expect(screen.getByText('Sign in to continue').closest('.glass')).toBeInTheDocument();

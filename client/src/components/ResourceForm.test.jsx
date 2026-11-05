@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ResourceForm from './ResourceForm.jsx';
 import * as resourcesApi from '../api/resources.js';
+import { AMENITIES } from '../utils/amenities.js';
 
 vi.mock('../api/resources.js', () => ({
   createResource: vi.fn(),
@@ -230,6 +231,16 @@ describe('ResourceForm component', () => {
     // Resolve in-flight request
     await act(async () => {
       resolvePromise({ data: { _id: 'res-1' } });
+    });
+  });
+
+  it('preserves accessible names for all amenity checkboxes with decorative icons', () => {
+    render(<ResourceForm open={true} onClose={vi.fn()} />);
+
+    AMENITIES.forEach((amenity) => {
+      const checkbox = screen.getByRole('checkbox', { name: amenity });
+      expect(checkbox).toBeInTheDocument();
+      expect(screen.getByLabelText(amenity)).toBe(checkbox);
     });
   });
 });
