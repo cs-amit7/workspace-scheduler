@@ -175,3 +175,4 @@ Inline SVG icons authored in-house (no icon dependency): wifi, monitor, projecto
 - No gradient text, emoji, neon, or three identical icon-and-blurb cards. One accent colour, used for the primary action and the active state.
 - Mono display type only for the login headline and for times and numbers.
 - Budget: no image files, about 3 KB of added JS or less, at most 4 backdrop-filter surfaces visible at once, no layout shift, Lighthouse performance within 3 points of the baseline.
+-Login hero: headline names the next half-hour slot (live), with a client-only slot teaser; no network calls.

@@ -35,8 +35,8 @@ describe('App Routing', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText('Book a room by the half hour.')
-      ).toBeInTheDocument();
+        screen.getByRole('heading', { level: 1 })
+      ).toHaveTextContent(/Your next half hour starts at/i);
       expect(
         screen.getByRole('link', { name: /Sign in with Google/i })
       ).toBeInTheDocument();
@@ -113,8 +113,9 @@ describe('App Routing', () => {
     }
 
     await waitFor(() => {
-      const notice = screen.getByRole('status');
-      expect(notice).toHaveTextContent('Your session expired. Please sign in again.');
+      const notice = screen.getByText('Your session expired. Please sign in again.');
+      expect(notice).toBeInTheDocument();
+      expect(notice).toHaveAttribute('role', 'status');
     });
   });
 

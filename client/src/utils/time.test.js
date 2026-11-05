@@ -5,6 +5,8 @@ import {
   localDayWindowUtc,
   buildDaySlots,
   formatLocalRange,
+  nextSlotStart,
+  buildTeaserSlots,
 } from './time.js';
 
 describe('time utils', () => {
@@ -130,6 +132,40 @@ describe('time utils', () => {
     it('returns empty string for missing or invalid ISO arguments', () => {
       expect(formatLocalRange(null, null)).toBe('');
       expect(formatLocalRange('2026-10-05T00:00:00Z', null)).toBe('');
+    });
+  });
+
+  describe('nextSlotStart', () => {
+    it('returns 20:30 for 20:14', () => {
+      const now = new Date(2026, 9, 5, 20, 14, 0);
+      expect(nextSlotStart(now)).toBe('20:30');
+    });
+
+    it('returns 21:00 for exactly 20:30:00', () => {
+      const now = new Date(2026, 9, 5, 20, 30, 0, 0);
+      expect(nextSlotStart(now)).toBe('21:00');
+    });
+
+    it('returns 21:00 for 20:59:59', () => {
+      const now = new Date(2026, 9, 5, 20, 59, 59, 999);
+      expect(nextSlotStart(now)).toBe('21:00');
+    });
+
+    it('returns 00:00 the next day for 23:45', () => {
+      const now = new Date(2026, 9, 5, 23, 45, 0, 0);
+      expect(nextSlotStart(now)).toBe('00:00');
+    });
+  });
+
+  describe('buildTeaserSlots', () => {
+    it('builds 8 slots starting at the next boundary', () => {
+      const now = new Date(2026, 9, 5, 14, 10, 0);
+      const slots = buildTeaserSlots(now);
+      expect(slots).toHaveLength(8);
+      expect(slots[0].label).toBe('14:30');
+      expect(slots[1].label).toBe('15:00');
+      expect(slots[7].label).toBe('18:00');
+      expect(slots.every((s) => !s.isPast)).toBe(true);
     });
   });
 });
