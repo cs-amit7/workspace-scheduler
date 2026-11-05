@@ -56,7 +56,7 @@ export default function Login() {
         <div className="w-full max-w-md space-y-6">
           {/* Hero headline on glow */}
           <div className="text-center space-y-4">
-            <div className="font-mono text-3xl sm:text-5xl font-bold tracking-widest text-ink pb-2">
+            <div className="font-mono text-2xl sm:text-3xl font-bold tracking-widest text-ink pb-2">
               <span className="text-brand-text">◆</span> WORKSPACE
             </div>
             <h1 className="font-mono text-3xl sm:text-4xl font-bold tracking-tight text-ink">

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import FilterBar from './FilterBar.jsx';
+import { AMENITIES } from '../utils/amenities.js';
 
 /**
  * Helper component to display current URL search params in tests
@@ -191,5 +192,19 @@ describe('FilterBar Component', () => {
     expect(screen.getByLabelText('Min Capacity')).toHaveValue(null);
     expect(screen.getByLabelText('WiFi')).not.toBeChecked();
     expect(onClearMock).toHaveBeenCalled();
+  });
+
+  it('preserves accessible names for all amenity checkboxes with decorative icons', () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <FilterBar />
+      </MemoryRouter>
+    );
+
+    AMENITIES.forEach((amenity) => {
+      const checkbox = screen.getByRole('checkbox', { name: amenity });
+      expect(checkbox).toBeInTheDocument();
+      expect(screen.getByLabelText(amenity)).toBe(checkbox);
+    });
   });
 });

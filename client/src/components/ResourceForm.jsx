@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useId } from 'react';
 import Modal from './Modal.jsx';
 import { AMENITIES } from '../utils/amenities.js';
+import AmenityIcon from './amenityIcons.jsx';
 import { createResource, updateResource } from '../api/resources.js';
 
 /**
@@ -355,6 +356,7 @@ export default function ResourceForm({ open, onClose, resource = null, onSuccess
                     onChange={() => handleAmenityToggle(amenity)}
                     className="rounded border-line bg-panel text-brand focus:ring-brand-text"
                   />
+                  <AmenityIcon name={amenity} className="w-3.5 h-3.5 shrink-0" />
                   <span className="font-mono">{amenity}</span>
                 </label>
               );

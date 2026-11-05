@@ -62,32 +62,31 @@
   position: absolute;
   border-radius: 9999px;
   pointer-events: none;
+  width: var(--glow-w, 1200px);
+  height: var(--glow-h, 800px);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(var(--color-brand-glow), var(--glow-opacity, 0.13)) 0%,
+    transparent 70%
+  );
 }
 
 .backdrop-glow-hero {
+  --glow-w: 1500px;
+  --glow-h: 1000px;
+  --glow-opacity: 0.24;
   top: 35%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: min(850px, 90vw);
-  height: min(650px, 70vh);
-  background: radial-gradient(
-    ellipse at center,
-    rgba(var(--color-brand-glow), 0.22) 0%,
-    transparent 70%
-  );
 }
 
 .backdrop-glow-app {
+  --glow-w: 1200px;
+  --glow-h: 800px;
+  --glow-opacity: 0.13;
   top: 0;
   left: 50%;
   transform: translate(-50%, -30%);
-  width: min(1000px, 100vw);
-  height: min(500px, 50vh);
-  background: radial-gradient(
-    ellipse at center,
-    rgba(var(--color-brand-glow), 0.1) 0%,
-    transparent 70%
-  );
 }
 
 @keyframes backdrop-float {

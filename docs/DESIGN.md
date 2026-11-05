@@ -157,7 +157,7 @@ Dark developer look inspired by coding-practice sites, not a copy. One `Backdrop
 ### Variants
 | | `hero` (Login) | `app` (everything else) |
 |---|---|---|
-| Glow | centred behind the headline, about 22% | top centre, about 10% |
+| Glow | centred behind the headline, about 1500x1000 px, about 24% | top centre, about 1200x800 px, about 13% |
 | Streaks | 7, about 8% | 4, about 4% |
 | Tiles | 10, spread across the page | 6, outer gutters only, about 35%, shown from 1280 px |
 | Below 768 px | no tiles, no animation, 3 streaks | same |
@@ -176,3 +176,6 @@ Inline SVG icons authored in-house (no icon dependency): wifi, monitor, projecto
 - Mono display type only for the login headline and for times and numbers.
 - Budget: no image files, about 3 KB of added JS or less, at most 4 backdrop-filter surfaces visible at once, no layout shift, Lighthouse performance within 3 points of the baseline.
 -Login hero: headline names the next half-hour slot (live), with a client-only slot teaser; no network calls.
+
+## 13. Amenity icons
+Every place an amenity name is shown (resource cards, detail page, dashboard filters, admin table, resource form) shows a small decorative icon (aria-hidden, 14-16 px, currentColor) before the text. The text always stays. Icons come from one in-house map (name, case-insensitive) with a generic fallback icon, and share the SVG set used by the backdrop tiles. No icon library.
