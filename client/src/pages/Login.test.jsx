@@ -1,9 +1,10 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 import Login from './Login.jsx';
 import * as AuthContextModule from '../context/AuthContext.jsx';
+import * as UseNowModule from '../hooks/useNow.js';
 import { GOOGLE_LOGIN_URL } from '../api/auth.js';
 
 function LocationDisplay() {
@@ -24,15 +25,18 @@ describe('Login Page', () => {
       </MemoryRouter>
     );
 
-    const headline = screen.getByText('Book a room by the half hour.');
-    expect(headline).toBeInTheDocument();
+    const headline = screen.getByRole('heading', { level: 1 });
+    expect(headline).toHaveTextContent(/Your next half hour starts at/i);
     expect(headline).toHaveClass('font-mono');
 
     const subline = screen.getByText(
-      'See what is free, pick a slot, done. Double bookings cannot happen.'
+      'Pick a slot below and watch it light up. Sign in to lock it in.'
     );
     expect(subline).toBeInTheDocument();
     expect(subline).toHaveClass('font-sans');
+
+    const wordmark = screen.getByText(/WORKSPACE/i);
+    expect(wordmark.closest('div')).toHaveClass('font-mono', 'text-3xl', 'font-bold');
 
     expect(document.querySelector('.bg-brand-gradient')).not.toBeInTheDocument();
     expect(screen.getByText('Sign in to continue').closest('.glass')).toBeInTheDocument();
@@ -43,6 +47,29 @@ describe('Login Page', () => {
 
     const demoBtn = screen.getByRole('button', { name: /Try demo/i });
     expect(demoBtn).toBeInTheDocument();
+  });
+
+  it('renders the Login headline showing the computed time with a mocked useNow', () => {
+    vi.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
+      user: null,
+      loginDemo: vi.fn(),
+    });
+    const mockDate = new Date(2026, 9, 5, 14, 10, 0);
+    vi.spyOn(UseNowModule, 'default').mockReturnValue(mockDate);
+    vi.spyOn(UseNowModule, 'useNow').mockReturnValue(mockDate);
+
+    render(
+      <MemoryRouter>
+        <Login />
+      </MemoryRouter>
+    );
+
+    const headline = screen.getByRole('heading', { level: 1 });
+    expect(headline).toHaveTextContent('Your next half hour starts at 14:30.');
+    expect(headline).toHaveClass('font-mono');
+
+    const timeHighlight = within(headline).getByText('14:30');
+    expect(timeHighlight).toHaveClass('text-brand-text');
   });
 
   it('calls loginDemo and navigates to the saved path when "Try demo" is clicked', async () => {
@@ -106,9 +133,9 @@ describe('Login Page', () => {
       </MemoryRouter>
     );
 
-    const statusNotice = screen.getByRole('status');
+    const statusNotice = screen.getByText('Your session expired. Please sign in again.');
     expect(statusNotice).toBeInTheDocument();
-    expect(statusNotice).toHaveTextContent('Your session expired. Please sign in again.');
+    expect(statusNotice).toHaveAttribute('role', 'status');
   });
 
   it('renders session-expired notice with role="status" when ?expired=true is in search params', () => {
@@ -123,8 +150,8 @@ describe('Login Page', () => {
       </MemoryRouter>
     );
 
-    const statusNotice = screen.getByRole('status');
+    const statusNotice = screen.getByText('Your session expired. Please sign in again.');
     expect(statusNotice).toBeInTheDocument();
-    expect(statusNotice).toHaveTextContent('Your session expired. Please sign in again.');
+    expect(statusNotice).toHaveAttribute('role', 'status');
   });
 });

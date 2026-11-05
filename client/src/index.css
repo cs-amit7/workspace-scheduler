@@ -130,6 +130,20 @@
   }
 }
 
+@keyframes soft-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.animate-soft-pulse {
+  animation: soft-pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 @media (max-width: 767px) {
   .backdrop-tile {
     display: none !important;
@@ -140,7 +154,8 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-pulse,
   .animate-ping,
-  .backdrop-tile {
+  .backdrop-tile,
+  .animate-soft-pulse {
     animation: none !important;
   }
 
@@ -150,4 +165,3 @@
     transition: none !important;
   }
 }
-

@@ -211,10 +211,85 @@ export function formatLocalRange(startIso, endIso) {
   return `${startParts.time}-${endParts.time} (${duration})`;
 }
 
+/**
+ * Returns the Date object of the first 30-minute boundary strictly after now in local time.
+ *
+ * @param {Date|string|number} [now=new Date()]
+ * @returns {Date|null}
+ */
+export function nextSlotBoundary(now = new Date()) {
+  const d = now instanceof Date ? new Date(now.getTime()) : new Date(now);
+  if (Number.isNaN(d.getTime())) {
+    return null;
+  }
+
+  const next = new Date(d);
+  next.setSeconds(0, 0);
+
+  if (d.getMinutes() < 30) {
+    next.setMinutes(30);
+  } else {
+    next.setHours(next.getHours() + 1, 0, 0, 0);
+  }
+
+  return next;
+}
+
+/**
+ * Returns the first 30-minute boundary strictly after now,
+ * in the user's local time, formatted HH:mm in 24-hour style.
+ *
+ * @param {Date|string|number} [now=new Date()]
+ * @returns {string} HH:mm formatted string
+ */
+export function nextSlotStart(now = new Date()) {
+  const boundary = nextSlotBoundary(now);
+  if (!boundary) {
+    return '';
+  }
+
+  const hours = String(boundary.getHours()).padStart(2, '0');
+  const minutes = String(boundary.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
+
+/**
+ * Builds the next 8 half-hour slots starting at the first 30-minute boundary strictly after now.
+ *
+ * @param {Date|string|number} [now=new Date()]
+ * @returns {Array<{ startIso: string, endIso: string, label: string, isPast: boolean }>}
+ */
+export function buildTeaserSlots(now = new Date()) {
+  const boundary = nextSlotBoundary(now);
+  if (!boundary) {
+    return [];
+  }
+
+  const slots = [];
+  for (let i = 0; i < 8; i += 1) {
+    const start = new Date(boundary.getTime() + i * 30 * 60 * 1000);
+    const end = new Date(boundary.getTime() + (i + 1) * 30 * 60 * 1000);
+    const hours = String(start.getHours()).padStart(2, '0');
+    const minutes = String(start.getMinutes()).padStart(2, '0');
+
+    slots.push({
+      startIso: start.toISOString(),
+      endIso: end.toISOString(),
+      label: `${hours}:${minutes}`,
+      isPast: false,
+    });
+  }
+
+  return slots;
+}
+
 export default {
   localToUtcIso,
   utcIsoToLocalParts,
   localDayWindowUtc,
   buildDaySlots,
   formatLocalRange,
+  nextSlotBoundary,
+  nextSlotStart,
+  buildTeaserSlots,
 };
