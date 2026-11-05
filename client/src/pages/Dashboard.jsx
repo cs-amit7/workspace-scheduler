@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import useResources from '../hooks/useResources.js';
 import useDocumentTitle from '../hooks/useDocumentTitle.js';
@@ -78,23 +78,36 @@ export default function Dashboard() {
     }
   };
 
+  const [stats, setStats] = useState(null);
+
+  const liveLine =
+    stats &&
+    typeof stats.openNow === 'number' &&
+    typeof stats.myUpcoming === 'number'
+      ? `${stats.openNow} free right now · ${stats.myUpcoming} booked by you`
+      : null;
+
   const handleClearFilters = () => {
     setSearchParams(new URLSearchParams());
   };
 
   return (
     <Container className="py-8">
-      <h1 className="sr-only">Dashboard</h1>
-
-      {/* Slim hero */}
-      <div className="mb-6 rounded-lg bg-brand-gradient p-6 text-white sm:p-8">
-        <h2 className="font-sans text-2xl font-bold sm:text-3xl">Find your spot.</h2>
-        <p className="mt-1 text-sm text-white/90">Book rooms & desks in seconds.</p>
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="font-sans text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          Workspaces
+        </h1>
+        {liveLine && (
+          <p data-testid="dashboard-live-line" className="mt-1 text-sm text-muted">
+            {liveLine}
+          </p>
+        )}
       </div>
 
       {/* Stat counters strip */}
       <div className="mb-6">
-        <StatStrip />
+        <StatStrip onStatsLoaded={setStats} />
       </div>
 
       {/* Filter bar */}

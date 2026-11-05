@@ -13,7 +13,7 @@ export default function Navbar() {
   return (
     <nav
       aria-label="Main Navigation"
-      className="bg-panel border-b border-line py-3"
+      className="glass border-b border-line py-3"
     >
       <Container className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-6">

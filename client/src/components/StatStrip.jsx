@@ -13,7 +13,7 @@ import Skeleton from './Skeleton.jsx';
  *
  * Shows skeleton counters while loading and an en dash (–) if a request fails.
  */
-export default function StatStrip() {
+export default function StatStrip({ onStatsLoaded }) {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     openNow: null,
@@ -41,7 +41,7 @@ export default function StatStrip() {
         return;
       }
 
-      setStats({
+      const calculatedStats = {
         openNow:
           openRes.status === 'fulfilled' && openRes.value?.meta?.total !== undefined
             ? openRes.value.meta.total
@@ -58,14 +58,17 @@ export default function StatStrip() {
           desksRes.status === 'fulfilled' && desksRes.value?.meta?.total !== undefined
             ? desksRes.value.meta.total
             : '–',
-      });
+      };
+
+      setStats(calculatedStats);
+      onStatsLoaded?.(calculatedStats);
       setLoading(false);
     });
 
     return () => {
       controller.abort();
     };
-  }, []);
+  }, [onStatsLoaded]);
 
   const items = [
     { id: 'open-now', label: 'Open now', value: stats.openNow },
@@ -77,7 +80,7 @@ export default function StatStrip() {
   return (
     <div
       data-testid="stat-strip"
-      className="grid grid-cols-2 divide-y divide-line rounded-lg border border-line bg-panel sm:grid-cols-4 sm:divide-y-0 sm:divide-x"
+      className="glass grid grid-cols-2 divide-y divide-line rounded-lg border border-line sm:grid-cols-4 sm:divide-y-0 sm:divide-x"
     >
       {items.map((item) => (
         <div key={item.id} className="flex flex-col items-center justify-center p-4 text-center">

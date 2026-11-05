@@ -45,21 +45,24 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-ink flex flex-col justify-center items-center">
+    <div className="min-h-screen text-ink flex flex-col justify-center items-center">
       <Container className="w-full flex flex-col items-center py-12">
         <div className="w-full max-w-md space-y-6">
-          {/* Slim Hero */}
-          <div className="bg-brand-gradient rounded-xl p-8 text-center shadow-lg text-white">
-            <div className="font-mono text-xs uppercase tracking-widest text-white/80 font-bold mb-2">
+          {/* Hero headline on glow */}
+          <div className="text-center space-y-3">
+            <div className="font-mono text-xs uppercase tracking-widest text-brand-text font-bold">
               ◆ WORKSPACE
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Find your spot. Book rooms and desks in seconds.
+            <h1 className="font-mono text-3xl sm:text-4xl font-bold tracking-tight text-ink">
+              Book a room by the half hour.
             </h1>
+            <p className="font-sans text-sm sm:text-base text-muted">
+              See what is free, pick a slot, done. Double bookings cannot happen.
+            </p>
           </div>
 
           {/* Card for actions */}
-          <div className="rounded-xl border border-line bg-panel p-6 sm:p-8 space-y-4">
+          <div className="glass rounded-xl p-6 sm:p-8 space-y-4">
             <h2 className="text-lg font-semibold text-ink text-center">
               Sign in to continue
             </h2>

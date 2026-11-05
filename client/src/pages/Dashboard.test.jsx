@@ -278,4 +278,70 @@ describe('Dashboard Page', () => {
     ).not.toBeInTheDocument();
     expect(screen.getByText('Slowly Loaded Room')).toBeInTheDocument();
   });
+
+  it('renders plain h1 Workspaces without gradient banner', async () => {
+    vi.spyOn(resourcesApi, 'listResources').mockResolvedValue({
+      data: [],
+      meta: { page: 1, limit: 12, total: 0 },
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Dashboard />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Workspaces' })).toBeInTheDocument();
+    });
+    expect(document.querySelector('.bg-brand-gradient')).not.toBeInTheDocument();
+  });
+
+  it('renders live line under h1 when stat data is available', async () => {
+    vi.spyOn(resourcesApi, 'listResources').mockImplementation((params) => {
+      if (params?.availableFrom) {
+        return Promise.resolve({ data: [], meta: { total: 6 } });
+      }
+      return Promise.resolve({ data: [], meta: { page: 1, limit: 12, total: 0 } });
+    });
+
+    vi.spyOn(bookingsApi, 'listMyBookings').mockResolvedValue({
+      data: [],
+      meta: { total: 2 },
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Dashboard />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      const liveLine = screen.getByTestId('dashboard-live-line');
+      expect(liveLine).toHaveTextContent('6 free right now · 2 booked by you');
+    });
+  });
+
+  it('omits live line when stat data is unavailable or fails', async () => {
+    vi.spyOn(resourcesApi, 'listResources').mockImplementation((params) => {
+      if (params?.availableFrom) {
+        return Promise.reject(new Error('Stats network failure'));
+      }
+      return Promise.resolve({ data: [], meta: { page: 1, limit: 12, total: 0 } });
+    });
+
+    vi.spyOn(bookingsApi, 'listMyBookings').mockRejectedValue(new Error('Bookings failure'));
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Dashboard />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Workspaces' })).toBeInTheDocument();
+    });
+
+    expect(screen.queryByTestId('dashboard-live-line')).not.toBeInTheDocument();
+  });
 });

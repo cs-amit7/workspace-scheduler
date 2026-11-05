@@ -140,7 +140,7 @@ export default function Modal({
         aria-modal="true"
         aria-labelledby={labelledBy}
         aria-describedby={ariaDescribedBy}
-        className={`relative w-full rounded-lg border border-line bg-panel p-6 shadow-xl ${className}`}
+        className={`glass relative w-full rounded-lg p-6 shadow-xl ${className}`}
       >
         {title && (
           <div
