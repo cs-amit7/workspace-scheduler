@@ -15,7 +15,9 @@ import bookingsRouter from './routes/bookings.js';
 
 const app = express();
 
-app.set('trust proxy', 1);
+// Render's load balancer plus Vercel's proxy sit in front of the app in production.
+const trustProxyHops = Number.parseInt(process.env.TRUST_PROXY_HOPS ?? '1', 10);
+app.set('trust proxy', Number.isInteger(trustProxyHops) && trustProxyHops >= 0 ? trustProxyHops : 1);
 
 app.use(helmet());
 
